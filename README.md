@@ -405,7 +405,7 @@ SOFTWARE.
 ## 📧 Contact
 
 - **GitHub Issues**: [Report a bug](https://github.com/yourusername/pdfforge/issues)
-- **Email**: your.email@example.com
+- **Email**: oscar2song@gmail.com
 - **Website**: https://your-website.com
 
 ---
