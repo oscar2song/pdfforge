@@ -422,7 +422,7 @@ SOFTWARE.
 
 ## 📈 Version History
 
-### Version 1.0.0 (2024-10-01) - INITIAL RELEASE
+### Version 1.0.0 (2025-10-28) - INITIAL RELEASE
 - 🎉 Initial release
 - ✨ PDF Merge with headers
 - ✨ PDF Normalize with OCR
