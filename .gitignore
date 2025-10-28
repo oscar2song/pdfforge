@@ -1,5 +1,6 @@
+# PDFForge .gitignore
+
 # Python
-__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -16,30 +17,98 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Virtual Environment
+# Virtual Environments
+.venv/
 venv/
 ENV/
 env/
+.venv312/
+.env
 
-# IDE
-.vscode/
+# PyCharm
 .idea/
-*.swp
-*.swo
-*~
+*.iml
+*.iws
+.idea_modules/
 
-# PDFForge specific
-temp/
-uploads/
-outputs/
-*.pdf
-*.docx
-logs/
+# VS Code
+.vscode/
+*.code-workspace
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Flask
+instance/
+.webassets-cache
+*.db
+*.sqlite3
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+
+# PDFForge specific
+uploads/
+temp/
+output/
+*.pdf
+*.zip
+
+# Backup files
+*.bak
+*.backup
+*-backup.*
+*_backup.*
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Documentation builds
+docs/_build/
+site/
+
+# Local configuration
+config.local.py
+settings.local.py
