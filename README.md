@@ -412,7 +412,7 @@ SOFTWARE.
 
 ## 📊 Stats
 
-- **Current Version**: 2.0.0 (Improved)
+- **Current Version**: 1.0.0 
 - **Total Features**: 3 main tools, 15+ options
 - **Lines of Code**: ~1,300
 - **Python Version**: 3.12+
@@ -421,15 +421,6 @@ SOFTWARE.
 ---
 
 ## 📈 Version History
-
-### Version 2.0.0 (2024-10-27) - IMPROVED RELEASE
-- ✅ Simplified output filenames (removed timestamps)
-- ✅ Added batch processing for normalize
-- ✅ Added page start number option for merge
-- ✅ Added empty header support for merge
-- ✅ Added custom output filename for merge
-- 🔧 Updated to latest package versions
-- 📝 Improved documentation
 
 ### Version 1.0.0 (2024-10-01) - INITIAL RELEASE
 - 🎉 Initial release
