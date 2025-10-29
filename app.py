@@ -2,6 +2,7 @@
 PDFForge - Professional PDF Tools Web Application
 Enhanced with OCR, Smart Page Numbers, Bookmarks, and More
 """
+from typing import Dict, List
 
 from flask import Flask, render_template, request, send_file, jsonify
 import fitz  # PyMuPDF
@@ -804,6 +805,387 @@ def normalize_pdf_enhanced(input_path, output_path, options=None):
     }
 
 
+def normalize_pdf_smart(input_path, output_path, options=None):
+    """Smart normalization that preserves existing headers/footers and adds minimal space."""
+    options = options or {}
+    page_size = options.get('page_size', 'letter')
+    orientation = options.get('orientation', 'portrait')
+    add_ocr = options.get('add_ocr', False)
+    force_ocr = options.get('force_ocr', False)
+    custom_width = options.get('custom_width', 612)
+    custom_height = options.get('custom_height', 792)
+
+    print("=" * 80)
+    print("SMART PDF NORMALIZER - PRESERVE EXISTING HEADERS/FOOTERS")
+    print("=" * 80)
+
+    # Handle page size
+    if page_size == 'custom':
+        target_width = float(custom_width)
+        target_height = float(custom_height)
+        if orientation.lower() == 'landscape':
+            target_width, target_height = target_height, target_width
+        size_name = f"Custom {target_width}x{target_height} pts"
+    else:
+        page_size_lower = page_size.lower()
+        if orientation.lower() == 'landscape':
+            page_size_key = f"{page_size_lower}-landscape"
+        else:
+            page_size_key = page_size_lower
+
+        if page_size_key in PAGE_SIZES:
+            target_width, target_height = PAGE_SIZES[page_size_key]
+        elif page_size in PAGE_SIZES:
+            target_width, target_height = PAGE_SIZES[page_size]
+        else:
+            target_width, target_height = PAGE_SIZES['A4']
+        size_name = f"{page_size.upper()} {orientation}"
+
+    doc = fitz.open(input_path)
+    total_pages = len(doc)
+
+    print(f"\nInput: {os.path.basename(input_path)}")
+    print(f"Total pages: {total_pages}")
+    print(f"Target size: {size_name} ({int(target_width)}x{int(target_height)} pts)")
+
+    # Analyze pages to determine margins and content type
+    scanned_count = 0
+    text_based_count = 0
+    has_good_margins_count = 0
+
+    for page_num in range(min(5, total_pages)):  # Check more pages for better analysis
+        page = doc.load_page(page_num)
+        pdf_type = detect_pdf_type(page)
+
+        if pdf_type['is_image_based']:
+            scanned_count += 1
+        else:
+            text_based_count += 1
+
+        # Check if page already has reasonable margins
+        if has_reasonable_margins(page):
+            has_good_margins_count += 1
+
+    is_mostly_scanned = scanned_count > text_based_count
+    already_has_good_margins = has_good_margins_count >= 3  # If 3+ pages have good margins
+
+    print(f"📄 Document type: {'Scanned/Image-based' if is_mostly_scanned else 'Text-based'}")
+    print(f"📝 Existing margins: {'Good' if already_has_good_margins else 'Minimal'}")
+
+    output_doc = fitz.open()
+    pages_with_ocr = 0
+    pages_with_text = 0
+
+    print("\nProcessing pages...")
+    print("-" * 80)
+
+    for page_num in range(total_pages):
+        source_page = doc.load_page(page_num)
+        original_rotation = source_page.rotation
+        page_rect = source_page.rect
+        has_text = has_text_layer(source_page)
+
+        new_page = output_doc.new_page(width=target_width, height=target_height)
+
+        if original_rotation != 0:
+            source_page.set_rotation(0)
+            derotated_rect = source_page.rect
+        else:
+            derotated_rect = page_rect
+
+        # MINIMAL MARGIN STRATEGY
+        # Only add very small margins for breathing room, don't force header/footer space
+        if already_has_good_margins:
+            # Document already has good margins - use minimal additional space
+            top_margin = 15
+            bottom_margin = 15
+            side_margin = 15
+            status = "minimal margins (good existing margins)"
+        else:
+            # Document has minimal margins - add slightly more but still conservative
+            top_margin = 25
+            bottom_margin = 20
+            side_margin = 20
+            status = "conservative margins (minimal existing margins)"
+
+        available_width = target_width - 2 * side_margin
+        available_height = target_height - top_margin - bottom_margin
+
+        if page_num < 3:
+            print(f"  Page {page_num + 1}: {status}")
+
+        if original_rotation in [90, 270]:
+            content_width = derotated_rect.height
+            content_height = derotated_rect.width
+
+            scale_x = available_width / content_width
+            scale_y = available_height / content_height
+            scale = min(scale_x, scale_y)
+
+            scaled_width = content_width * scale
+            scaled_height = content_height * scale
+            x_offset = side_margin + (available_width - scaled_width) / 2
+            y_offset = top_margin + (available_height - scaled_height) / 2
+
+            target_rect = fitz.Rect(
+                x_offset,
+                y_offset,
+                x_offset + scaled_width,
+                y_offset + scaled_height
+            )
+
+            new_page.show_pdf_page(target_rect, doc, page_num, rotate=90)
+
+        else:
+            scale_x = available_width / derotated_rect.width
+            scale_y = available_height / derotated_rect.height
+            scale = min(scale_x, scale_y)
+
+            scaled_width = derotated_rect.width * scale
+            scaled_height = derotated_rect.height * scale
+            x_offset = side_margin + (available_width - scaled_width) / 2
+            y_offset = top_margin + (available_height - scaled_height) / 2
+
+            target_rect = fitz.Rect(
+                x_offset,
+                y_offset,
+                x_offset + scaled_width,
+                y_offset + scaled_height
+            )
+
+            new_page.show_pdf_page(target_rect, doc, page_num)
+
+        # Add OCR if requested
+        if add_ocr and (force_ocr or not has_text):
+            ocr_text = perform_ocr_on_page(source_page)
+            if ocr_text:
+                add_text_layer_ocr(new_page, ocr_text)
+                pages_with_ocr += 1
+                if page_num < 3:
+                    print(f"    OCR: {len(ocr_text)} characters added")
+            elif page_num < 3:
+                print(f"    OCR: No text detected")
+        elif has_text and page_num < 3:
+            print(f"    Text: Layer present")
+
+    doc.close()
+
+    print("\n" + "=" * 80)
+    print(f"Saving normalized PDF...")
+    output_doc.save(output_path, garbage=4, deflate=True)
+    output_doc.close()
+
+    print(f"\n✅ Successfully normalized {total_pages} pages!")
+    print(f"📄 All pages now: {int(target_width)} x {int(target_height)} pts ({size_name})")
+    if already_has_good_margins:
+        print(f"📝 Margin strategy: Minimal (15pt) - preserved existing layout")
+    else:
+        print(f"📝 Margin strategy: Conservative (25pt top, 20pt bottom)")
+    if add_ocr:
+        print(f"🔍 OCR performed on: {pages_with_ocr} pages")
+    print(f"💾 Output: {output_path}")
+    print("=" * 80)
+
+    return {
+        'total_pages': total_pages,
+        'pages_with_ocr': pages_with_ocr,
+        'target_size': size_name,
+        'top_margin': top_margin,
+        'bottom_margin': bottom_margin,
+        'margin_strategy': 'minimal' if already_has_good_margins else 'conservative'
+    }
+
+
+def has_reasonable_margins(page, threshold=40):
+    """
+    Check if page already has reasonable margins (content doesn't start too close to edges).
+    Returns True if page has good existing margins.
+    """
+    try:
+        # For scanned PDFs, we'll be more conservative since we can't easily detect margins
+        pdf_type = detect_pdf_type(page)
+
+        if pdf_type['is_image_based']:
+            # For scanned PDFs, assume they might have headers/footers we want to preserve
+            # Be conservative - don't assume they need extra space
+            return True
+
+        # For text-based PDFs, check actual content positioning
+        text_dict = page.get_text("dict")
+        if not text_dict or 'blocks' not in text_dict:
+            return True  # No text content, assume reasonable layout
+
+        min_y = float('inf')
+        max_y = float('-inf')
+
+        for block in text_dict['blocks']:
+            if block.get('type') == 0:  # Text block
+                bbox = block.get('bbox', [0, 0, 0, 0])
+                min_y = min(min_y, bbox[1])
+                max_y = max(max_y, bbox[3])
+
+        page_height = page.rect.height
+
+        # Check if content has reasonable top and bottom margins
+        top_margin = min_y
+        bottom_margin = page_height - max_y
+
+        has_good_top_margin = top_margin >= threshold
+        has_good_bottom_margin = bottom_margin >= threshold
+
+        return has_good_top_margin and has_good_bottom_margin
+
+    except Exception as e:
+        print(f"      Warning: Could not analyze margins - {e}")
+        return True  # On error, assume reasonable margins to be safe
+
+
+def normalize_pdf_conservative(input_path, output_path, options=None):
+    """Ultra-conservative normalization - just fit to page size with minimal changes."""
+    options = options or {}
+    page_size = options.get('page_size', 'letter')
+    orientation = options.get('orientation', 'portrait')
+    add_ocr = options.get('add_ocr', False)
+    custom_width = options.get('custom_width', 612)
+    custom_height = options.get('custom_height', 792)
+
+    print("=" * 80)
+    print("CONSERVATIVE PDF NORMALIZER - MAXIMUM PRESERVATION")
+    print("=" * 80)
+
+    # Handle page size
+    if page_size == 'custom':
+        target_width = float(custom_width)
+        target_height = float(custom_height)
+        if orientation.lower() == 'landscape':
+            target_width, target_height = target_height, target_width
+        size_name = f"Custom {target_width}x{target_height} pts"
+    else:
+        page_size_lower = page_size.lower()
+        if orientation.lower() == 'landscape':
+            page_size_key = f"{page_size_lower}-landscape"
+        else:
+            page_size_key = page_size_lower
+
+        if page_size_key in PAGE_SIZES:
+            target_width, target_height = PAGE_SIZES[page_size_key]
+        elif page_size in PAGE_SIZES:
+            target_width, target_height = PAGE_SIZES[page_size]
+        else:
+            target_width, target_height = PAGE_SIZES['A4']
+        size_name = f"{page_size.upper()} {orientation}"
+
+    doc = fitz.open(input_path)
+    total_pages = len(doc)
+
+    print(f"\nInput: {os.path.basename(input_path)}")
+    print(f"Total pages: {total_pages}")
+    print(f"Target size: {size_name} ({int(target_width)}x{int(target_height)} pts)")
+    print(f"Strategy: Fit to page with absolute minimal margins")
+
+    output_doc = fitz.open()
+    pages_with_ocr = 0
+
+    print("\nProcessing pages...")
+    print("-" * 80)
+
+    for page_num in range(total_pages):
+        source_page = doc.load_page(page_num)
+        original_rotation = source_page.rotation
+        page_rect = source_page.rect
+
+        new_page = output_doc.new_page(width=target_width, height=target_height)
+
+        if original_rotation != 0:
+            source_page.set_rotation(0)
+            derotated_rect = source_page.rect
+        else:
+            derotated_rect = page_rect
+
+        # ABSOLUTE MINIMAL MARGINS - just enough to avoid edge issues
+        top_margin = 10
+        bottom_margin = 10
+        side_margin = 10
+
+        available_width = target_width - 2 * side_margin
+        available_height = target_height - top_margin - bottom_margin
+
+        if page_num < 3:
+            print(f"  Page {page_num + 1}: Ultra-minimal margins (10pt)")
+
+        if original_rotation in [90, 270]:
+            content_width = derotated_rect.height
+            content_height = derotated_rect.width
+
+            scale_x = available_width / content_width
+            scale_y = available_height / content_height
+            scale = min(scale_x, scale_y)
+
+            scaled_width = content_width * scale
+            scaled_height = content_height * scale
+            x_offset = side_margin + (available_width - scaled_width) / 2
+            y_offset = top_margin + (available_height - scaled_height) / 2
+
+            target_rect = fitz.Rect(
+                x_offset,
+                y_offset,
+                x_offset + scaled_width,
+                y_offset + scaled_height
+            )
+
+            new_page.show_pdf_page(target_rect, doc, page_num, rotate=90)
+
+        else:
+            scale_x = available_width / derotated_rect.width
+            scale_y = available_height / derotated_rect.height
+            scale = min(scale_x, scale_y)
+
+            scaled_width = derotated_rect.width * scale
+            scaled_height = derotated_rect.height * scale
+            x_offset = side_margin + (available_width - scaled_width) / 2
+            y_offset = top_margin + (available_height - scaled_height) / 2
+
+            target_rect = fitz.Rect(
+                x_offset,
+                y_offset,
+                x_offset + scaled_width,
+                y_offset + scaled_height
+            )
+
+            new_page.show_pdf_page(target_rect, doc, page_num)
+
+        # Add OCR if requested
+        if add_ocr:
+            ocr_text = perform_ocr_on_page(source_page)
+            if ocr_text:
+                add_text_layer_ocr(new_page, ocr_text)
+                pages_with_ocr += 1
+                if page_num < 3:
+                    print(f"    OCR: {len(ocr_text)} characters added")
+
+    doc.close()
+
+    print("\n" + "=" * 80)
+    print(f"Saving normalized PDF...")
+    output_doc.save(output_path, garbage=4, deflate=True)
+    output_doc.close()
+
+    print(f"\n✅ Successfully normalized {total_pages} pages!")
+    print(f"📄 All pages now: {int(target_width)} x {int(target_height)} pts ({size_name})")
+    print(f"📝 Margin strategy: Ultra-minimal (10pt) - maximum content preservation")
+    if add_ocr:
+        print(f"🔍 OCR performed on: {pages_with_ocr} pages")
+    print(f"💾 Output: {output_path}")
+    print("=" * 80)
+
+    return {
+        'total_pages': total_pages,
+        'pages_with_ocr': pages_with_ocr,
+        'target_size': size_name,
+        'margin_strategy': 'ultra_minimal'
+    }
+
+
 # ============================================================================
 # COMPRESSION FUNCTIONS
 # ============================================================================
@@ -1093,7 +1475,7 @@ def normalize_batch(file_paths, filenames, options=None):
             output_filename = create_output_filename(original_filename, 'normalized')
             output_path = os.path.join(tempfile.gettempdir(), output_filename)
 
-            stats = normalize_pdf_enhanced(file_path, output_path, options)
+            stats = normalize_pdf_smart(file_path, output_path, options)
 
             normalized_files.append({
                 'path': output_path,
@@ -1296,7 +1678,7 @@ def normalize():
             output_filename = create_output_filename(original_filename, 'normalized')
             output_path = os.path.join(tempfile.gettempdir(), output_filename)
 
-            stats = normalize_pdf_enhanced(file_path, output_path, options)
+            stats = normalize_pdf_smart(file_path, output_path, options)
 
             return jsonify({
                 'success': True,
