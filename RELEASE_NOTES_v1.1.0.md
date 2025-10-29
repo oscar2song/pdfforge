@@ -187,4 +187,4 @@ If you find PDFForge useful, please:
 
 Made with ❤️ by the PDFForge Team
 
-*Released on: October 29, 2024*
+*Released on: October 29, 2025*
