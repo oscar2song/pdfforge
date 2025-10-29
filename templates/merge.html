@@ -158,7 +158,7 @@
             color: #999;
         }
 
-        /* Merge Options Section */
+        /* Enhanced Options Section */
         .options-section {
             background: #f8f9fa;
             padding: 25px;
@@ -211,6 +211,60 @@
             font-weight: 700;
             margin-left: 8px;
             vertical-align: middle;
+        }
+
+        .advanced-options {
+            margin-top: 25px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .advanced-options h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .option-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .option-row label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .option-row select,
+        .option-row input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .checkbox-option label {
+            margin: 0;
+            font-weight: normal;
         }
 
         .info-box {
@@ -286,6 +340,11 @@
                 flex-direction: column;
                 gap: 15px;
             }
+
+            .option-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
         }
     </style>
 </head>
@@ -294,7 +353,7 @@
         <div class="header">
             <a href="/" class="back-link">← Back to Home</a>
             <h1>📑 PDF Merge</h1>
-            <p>Combine multiple PDF files with professional two-line headers</p>
+            <p>Combine multiple PDF files with professional headers & smart features</p>
         </div>
 
         <div class="upload-area" id="uploadArea">
@@ -323,26 +382,26 @@
                         <input type="radio" id="headerMode" name="mergeMode" value="headers">
                         <label for="headerMode">
                             Add Headers (Two Lines)
-                            <span class="premium-badge">PREMIUM</span>
+                            <span class="premium-badge">ENHANCED</span>
                         </label>
                     </div>
                 </div>
 
                 <div class="info-box">
                     <p><strong>Simple Merge:</strong> Fast merge without modifications (default)</p>
-                    <p style="margin-top: 8px;"><strong>Add Headers:</strong> Professional two-line headers on each page + smart spacing detection + page numbers</p>
-                    <p style="margin-top: 8px;"><strong>💡 Tip:</strong> Leave headers empty to merge as-is!</p>
+                    <p style="margin-top: 8px;"><strong>Add Headers:</strong> Professional two-line headers + smart spacing + OCR + bookmarks</p>
+                    <p style="margin-top: 8px;"><strong>💡 Tip:</strong> Leave headers empty to merge as-is with enhanced features!</p>
                 </div>
             </div>
 
-            <!-- NEW: Output Filename -->
-            <div class="option-group" style="margin-top: 25px;">
+            <!-- Output Filename -->
+            <div class="option-group">
                 <label for="outputFilename" style="display: block; font-weight: 600; color: #333; margin-bottom: 8px;">
                     📝 Output Filename (optional)
                 </label>
-                <input 
-                    type="text" 
-                    id="outputFilename" 
+                <input
+                    type="text"
+                    id="outputFilename"
                     placeholder="Leave empty to use first file's name"
                     style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 1em;"
                 >
@@ -351,14 +410,14 @@
                 </p>
             </div>
 
-            <!-- NEW: Page Start Number (for Simple Merge) -->
-            <div class="option-group" id="pageStartGroup" style="margin-top: 20px;">
+            <!-- Page Start Number -->
+            <div class="option-group">
                 <label for="pageStart" style="display: block; font-weight: 600; color: #333; margin-bottom: 8px;">
                     🔢 Start Page Number (optional)
                 </label>
-                <input 
-                    type="number" 
-                    id="pageStart" 
+                <input
+                    type="number"
+                    id="pageStart"
                     value="1"
                     min="1"
                     style="width: 150px; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 1em;"
@@ -366,6 +425,51 @@
                 <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
                     Page numbering starts from this number (default: 1)
                 </p>
+            </div>
+
+            <!-- Advanced Options -->
+            <div class="advanced-options">
+                <h4>🎯 Advanced Options</h4>
+
+                <div class="option-row">
+                    <div>
+                        <label for="pageNumberPosition">📍 Page Number Position:</label>
+                        <select id="pageNumberPosition">
+                            <option value="top-center">Top Center</option>
+                            <option value="top-right">Top Right</option>
+                            <option value="bottom-center">Bottom Center</option>
+                            <option value="bottom-right">Bottom Right</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="pageNumberFontSize">🔤 Page Number Font Size:</label>
+                        <input
+                            type="number"
+                            id="pageNumberFontSize"
+                            value="12"
+                            min="8"
+                            max="24"
+                        >
+                    </div>
+                </div>
+
+                <div class="checkbox-option">
+                    <input type="checkbox" id="addBookmarks" checked>
+                    <label for="addBookmarks">📑 Add bookmarks for each file (makes navigation easier)</label>
+                </div>
+
+                <div class="checkbox-option">
+                    <input type="checkbox" id="smartPageNumbers" checked>
+                    <label for="smartPageNumbers">🎯 Smart page number positioning (avoids conflicts)</label>
+                </div>
+
+                <div class="info-box" style="margin-top: 15px;">
+                    <p><strong>✨ New Features:</strong></p>
+                    <p>• Smart page numbers avoid existing content</p>
+                    <p>• Automatic bookmarks for easy navigation</p>
+                    <p>• OCR support for scanned PDFs</p>
+                    <p>• Customizable page number appearance</p>
+                </div>
             </div>
         </div>
 
@@ -474,12 +578,11 @@
                 fileList.innerHTML = '';
                 mergeBtn.disabled = true;
                 mergeBtn.textContent = 'Select PDFs to merge';
-                // Clear filename suggestion
                 document.getElementById('outputFilename').placeholder = 'Leave empty to use first file\'s name';
                 return;
             }
 
-            // NEW: Auto-suggest output filename from first file
+            // Auto-suggest output filename from first file
             if (uploadedFiles.length > 0) {
                 const firstName = uploadedFiles[0].name.replace('.pdf', '');
                 document.getElementById('outputFilename').placeholder = `e.g., ${firstName}_merged`;
@@ -546,8 +649,10 @@
             const addHeaders = headerModeRadio.checked;
             const pageStart = parseInt(document.getElementById('pageStart').value) || 1;
             const outputFilename = document.getElementById('outputFilename').value.trim();
-
-            // Note: Empty headers are now allowed - backend will handle it
+            const pageNumberPosition = document.getElementById('pageNumberPosition').value;
+            const pageNumberFontSize = parseInt(document.getElementById('pageNumberFontSize').value) || 12;
+            const addBookmarks = document.getElementById('addBookmarks').checked;
+            const smartSpacing = document.getElementById('smartPageNumbers').checked;
 
             mergeBtn.disabled = true;
             mergeBtn.textContent = 'Merging PDFs...';
@@ -567,8 +672,11 @@
                             scale_factor: 0.96,
                             scale_factor_optimized: 0.99,
                             add_footer_line: false,
-                            smart_spacing: true,
-                            add_page_numbers: true
+                            smart_spacing: smartSpacing,
+                            add_page_numbers: true,
+                            page_number_position: pageNumberPosition,
+                            page_number_font_size: pageNumberFontSize,
+                            add_bookmarks: addBookmarks
                         }
                     })
                 });

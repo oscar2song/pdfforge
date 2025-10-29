@@ -142,6 +142,90 @@
             background: #c82333;
         }
 
+        /* NEW: Options Section */
+        .options-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .options-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .option-group {
+            margin-bottom: 20px;
+        }
+
+        .option-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .option-group select,
+        .option-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .custom-dimensions {
+            display: none;
+            margin-top: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .custom-dimensions.show {
+            display: block;
+        }
+
+        .dimension-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .ocr-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .ocr-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .ocr-option label {
+            margin: 0;
+            font-weight: normal;
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .info-box p {
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+        }
+
         .normalize-btn {
             width: 100%;
             padding: 15px;
@@ -208,12 +292,12 @@
         <div class="header">
             <a href="/" class="back-link">← Back to Home</a>
             <h1>📋 PDF Normalize</h1>
-            <p class="subtitle">Standardize PDFs to uniform page sizes. Now with batch processing!</p>
-            <span class="badge">✨ IMPROVED - Batch Support</span>
+            <p class="subtitle">Standardize PDFs to uniform page sizes with OCR support</p>
+            <span class="badge">✨ ENHANCED - Custom Sizes & OCR</span>
         </div>
 
         <div class="batch-info" id="batchInfo">
-            <strong>📁 Batch Mode:</strong> Upload multiple PDFs to normalize them all at once. You'll get a ZIP file with all normalized PDFs, each keeping its original filename with "_normalized" suffix.
+            <strong>📁 Batch Mode:</strong> Upload multiple PDFs to normalize them all at once. You'll get a ZIP file with all normalized PDFs.
         </div>
 
         <div class="upload-area" id="uploadArea">
@@ -226,6 +310,66 @@
         </div>
 
         <div class="file-list" id="fileList"></div>
+
+        <!-- NEW: Options Section -->
+        <div class="options-section">
+            <h3>⚙️ Normalization Options</h3>
+
+            <div class="option-group">
+                <label for="pageSize">📄 Page Size:</label>
+                <select id="pageSize">
+                    <option value="letter">Letter (8.5" x 11")</option>
+                    <option value="legal">Legal (8.5" x 14")</option>
+                    <option value="A4">A4 (210mm x 297mm)</option>
+                    <option value="A3">A3 (297mm x 420mm)</option>
+                    <option value="A5">A5 (148mm x 210mm)</option>
+                    <option value="custom">Custom Dimensions</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label for="orientation">🔄 Orientation:</label>
+                <select id="orientation">
+                    <option value="portrait">Portrait</option>
+                    <option value="landscape">Landscape</option>
+                </select>
+            </div>
+
+            <div class="custom-dimensions" id="customDimensions">
+                <label>📏 Custom Dimensions (points):</label>
+                <div class="dimension-inputs">
+                    <div>
+                        <label for="customWidth">Width:</label>
+                        <input type="number" id="customWidth" value="612" min="100" max="5000">
+                    </div>
+                    <div>
+                        <label for="customHeight">Height:</label>
+                        <input type="number" id="customHeight" value="792" min="100" max="5000">
+                    </div>
+                </div>
+                <p style="font-size: 0.9em; color: #666; margin-top: 8px;">
+                    💡 72 points = 1 inch. Letter: 612x792, A4: 595x842
+                </p>
+            </div>
+
+            <div class="option-group">
+                <div class="ocr-option">
+                    <input type="checkbox" id="addOCR">
+                    <label for="addOCR">🔍 Add OCR Text Layer (for scanned PDFs)</label>
+                </div>
+                <div class="ocr-option">
+                    <input type="checkbox" id="forceOCR">
+                    <label for="forceOCR">⚡ Force OCR (even if text exists)</label>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p><strong>💡 OCR Tips:</strong></p>
+                <p>• Makes scanned PDFs searchable and selectable</p>
+                <p>• Adds invisible text layer without changing appearance</p>
+                <p>• "Force OCR" will re-process even text-based PDFs</p>
+            </div>
+        </div>
 
         <button class="normalize-btn" id="normalizeBtn" disabled>
             Select PDFs to normalize
@@ -241,8 +385,19 @@
         const normalizeBtn = document.getElementById('normalizeBtn');
         const statusMessage = document.getElementById('statusMessage');
         const batchInfo = document.getElementById('batchInfo');
+        const pageSizeSelect = document.getElementById('pageSize');
+        const customDimensions = document.getElementById('customDimensions');
 
         let uploadedFiles = [];
+
+        // Show/hide custom dimensions based on page size selection
+        pageSizeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customDimensions.classList.add('show');
+            } else {
+                customDimensions.classList.remove('show');
+            }
+        });
 
         uploadArea.addEventListener('click', () => fileInput.click());
 
@@ -272,7 +427,6 @@
                     continue;
                 }
 
-                // Upload file first
                 const formData = new FormData();
                 formData.append('file', file);
 
@@ -323,8 +477,8 @@
             `;
 
             normalizeBtn.disabled = false;
-            normalizeBtn.textContent = uploadedFiles.length === 1 
-                ? 'Normalize PDF' 
+            normalizeBtn.textContent = uploadedFiles.length === 1
+                ? 'Normalize PDF'
                 : `Normalize ${uploadedFiles.length} PDFs`;
 
             if (uploadedFiles.length > 1) {
@@ -359,16 +513,29 @@
             showMessage('Processing your PDF(s)...', 'info');
 
             try {
+                const options = {
+                    page_size: pageSizeSelect.value,
+                    orientation: document.getElementById('orientation').value,
+                    add_ocr: document.getElementById('addOCR').checked,
+                    force_ocr: document.getElementById('forceOCR').checked
+                };
+
+                // Add custom dimensions if selected
+                if (pageSizeSelect.value === 'custom') {
+                    options.custom_width = document.getElementById('customWidth').value;
+                    options.custom_height = document.getElementById('customHeight').value;
+                }
+
                 const requestData = uploadedFiles.length === 1 ? {
                     file_path: uploadedFiles[0].path,
                     filename: uploadedFiles[0].filename,
-                    options: {}
+                    options: options
                 } : {
                     files: uploadedFiles.map(f => ({
                         path: f.path,
                         filename: f.filename
                     })),
-                    options: {}
+                    options: options
                 };
 
                 const response = await fetch('/normalize-pdf', {
@@ -382,13 +549,13 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    const filename = result.batch 
+                    const filename = result.batch
                         ? 'normalized_pdfs.zip'
                         : result.output_filename;
-                    
-                    showMessage(result.batch 
+
+                    showMessage(result.batch
                         ? `✅ Successfully normalized ${result.successful}/${result.total_files} PDFs! Downloading ZIP...`
-                        : '✅ PDF normalized successfully! Downloading...', 
+                        : '✅ PDF normalized successfully! Downloading...',
                         'success'
                     );
 
@@ -404,16 +571,16 @@
                 } else {
                     showMessage(`❌ Error: ${result.error}`, 'error');
                     normalizeBtn.disabled = false;
-                    normalizeBtn.textContent = uploadedFiles.length === 1 
-                        ? 'Normalize PDF' 
+                    normalizeBtn.textContent = uploadedFiles.length === 1
+                        ? 'Normalize PDF'
                         : `Normalize ${uploadedFiles.length} PDFs`;
                 }
 
             } catch (error) {
                 showMessage(`❌ Error: ${error.message}`, 'error');
                 normalizeBtn.disabled = false;
-                normalizeBtn.textContent = uploadedFiles.length === 1 
-                    ? 'Normalize PDF' 
+                normalizeBtn.textContent = uploadedFiles.length === 1
+                    ? 'Normalize PDF'
                     : `Normalize ${uploadedFiles.length} PDFs`;
             }
         });
