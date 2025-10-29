@@ -387,25 +387,25 @@ def process_and_add_page(output_pdf, source_pdf, page_num, header_notes,
         else:
             # Headers provided - use moderate scaling
             if pdf_type['is_image_based']:
-                current_scale_factor = 0.95  # Moderate scaling for image PDFs with headers
+                current_scale_factor = 0.98  # Moderate scaling for image PDFs with headers
                 header_space = 50  # Reasonable header space
                 content_offset = 0
-                status_msg = "IMAGE-BASED PDF (with headers) - scale 0.95"
+                status_msg = "IMAGE-BASED PDF (with headers) - scale 0.98"
             elif has_tiny_margin:
-                current_scale_factor = 0.97
+                current_scale_factor = 0.985
                 header_space = 40
                 content_offset = 0
-                status_msg = "TINY margin (with headers) - scale 0.97"
+                status_msg = "TINY margin (with headers) - scale 0.985"
             elif has_header_content:
                 current_scale_factor = 0.98  # Very slight reduction for PDFs with existing headers
                 header_space = 35
                 content_offset = 0
                 status_msg = "has header (with custom) - scale 0.98"
             else:
-                current_scale_factor = 0.985  # Minimal reduction for clean PDFs with headers
+                current_scale_factor = 0.99  # Minimal reduction for clean PDFs with headers
                 header_space = 35
                 content_offset = 0
-                status_msg = "clean PDF (with headers) - scale 0.985"
+                status_msg = "clean PDF (with headers) - scale 0.99"
     else:
         header_space = 35
         content_offset = 0
@@ -482,7 +482,7 @@ def merge_pdfs_enhanced(file_configs, options=None):
     add_headers = options.get('add_headers', False)
     page_start = options.get('page_start', 1)
     custom_filename = options.get('output_filename', '')
-    scale_factor = options.get('scale_factor', 0.96)
+    scale_factor = options.get('scale_factor', 0.98)
     scale_factor_optimized = options.get('scale_factor_optimized', 0.99)
     add_footer_line = options.get('add_footer_line', False)
     smart_spacing = options.get('smart_spacing', True)
