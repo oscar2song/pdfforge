@@ -1,25 +1,24 @@
 # 🔨 PDFForge - Professional PDF Tools
 
-A powerful, user-friendly web application for PDF manipulation built with Flask and PyMuPDF. Merge, normalize, and compress your PDFs with professional features like custom headers, batch processing, and smart page detection.
+A powerful, user-friendly web application for PDF manipulation built with Flask and PyMuPDF. Merge, normalize, and compress your PDFs with professional features like custom headers, batch processing, smart page detection, and **drag-and-drop file reordering**.
 
-[![Python Version](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Flask](https://img.shields.io/badge/flask-3.1.2-green.svg)](https://flask.palletsprojects.com/)
-[![PyMuPDF](https://img.shields.io/badge/PyMuPDF-1.26.5-orange.svg)](https://pymupdf.readthedocs.io/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-
----
+![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-active-success)
 
 ## ✨ Features
 
-### 📑 PDF Merge
+### 🔗 PDF Merge
+- **Drag-and-Drop Reordering**: Easily reorder files by dragging them in the list before merging
 - **Simple Merge Mode**: Fast merging without modifications
 - **Header Mode**: Add professional two-line headers to each page
 - **Smart Spacing Detection**: Automatically adjusts for existing headers
 - **Custom Page Numbers**: Start numbering from any number (default: 1)
 - **Custom Output Filename**: Name your merged file or auto-generate from first file
 - **Empty Header Support**: Leave headers empty to merge as-is
+- **Bookmarks**: Automatically create bookmarks for each merged document
 
-### 📋 PDF Normalize
+### 📏 PDF Normalize
 - **Standard Page Sizes**: Convert to Letter, Legal, A4, A3, A5 (portrait/landscape)
 - **OCR Support**: Add searchable text layer to scanned documents
 - **Batch Processing**: Normalize multiple PDFs at once
@@ -33,8 +32,6 @@ A powerful, user-friendly web application for PDF manipulation built with Flask 
 - **Safe Compression**: Never increases file size
 - **Size Reporting**: See before/after sizes and compression ratio
 
----
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -45,7 +42,7 @@ A powerful, user-friendly web application for PDF manipulation built with Flask 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/pdfforge.git
+   git clone https://github.com/oscar2song/pdfforge.git
    cd pdfforge
    ```
 
@@ -75,9 +72,7 @@ A powerful, user-friendly web application for PDF manipulation built with Flask 
    http://localhost:5000
    ```
 
----
-
-## 📦 Requirements
+## 📦 Dependencies
 
 ```txt
 Flask==3.1.2
@@ -88,50 +83,62 @@ pytesseract==0.3.13
 Werkzeug==3.1.3
 ```
 
-### Optional: Tesseract OCR
+### OCR Setup (Optional)
 For OCR functionality, install Tesseract-OCR:
 - **Windows**: [Download installer](https://github.com/UB-Mannheim/tesseract/wiki)
 - **macOS**: `brew install tesseract`
 - **Linux**: `sudo apt-get install tesseract-ocr`
 
----
-
 ## 📖 Usage Guide
 
-### PDF Merge
+### Simple PDF Merge
 
-#### Simple Merge
 1. Navigate to **PDF Merge** from the homepage
-2. Upload 2 or more PDF files
-3. (Optional) Set custom output filename
-4. (Optional) Set starting page number
-5. Click **Merge PDFs**
+2. Upload 2 or more PDF files (drag files or click to browse)
+3. **Reorder files** by dragging them up or down in the list
+4. (Optional) Set custom output filename
+5. (Optional) Set starting page number
+6. Click **Merge PDFs**
 
 **Example**: Merge `report1.pdf` and `report2.pdf` → Get `report1_merged.pdf`
 
-#### Merge with Headers
+### PDF Merge with Reordering
+
+1. Upload multiple PDF files
+2. **Drag files** using the handle (☰) to reorder them
+3. The order badge (#1, #2, #3...) shows the merge order
+4. Files will be merged in the displayed order
+5. Click **Merge PDFs**
+
+### PDF Merge with Headers
+
 1. Navigate to **PDF Merge**
-2. Upload PDF files
+2. Upload PDF files and **reorder as needed**
 3. Select **"Add Headers (Two Lines)"** mode
 4. Enter header text for each file (or leave empty)
-5. (Optional) Customize settings
+5. (Optional) Customize settings:
+   - Page number position
+   - Page number font size
+   - Add bookmarks
+   - Smart spacing
 6. Click **Merge PDFs**
 
 **Example Headers**:
 - Line 1: `Project Report - Confidential`
 - Line 2: `Internal Use Only - 2024`
 
-### PDF Normalize
+### Single PDF Normalization
 
-#### Single File
 1. Navigate to **PDF Normalize**
 2. Upload a PDF file
 3. Select target page size (default: Letter)
-4. Click **Normalize PDF**
+4. (Optional) Enable OCR for scanned documents
+5. Click **Normalize PDF**
 
 **Output**: `document_normalized.pdf`
 
-#### Batch Processing
+### Batch PDF Normalization
+
 1. Navigate to **PDF Normalize**
 2. Upload multiple PDF files
 3. Select target page size
@@ -139,9 +146,8 @@ For OCR functionality, install Tesseract-OCR:
 
 **Output**: `normalized_pdfs_[timestamp].zip` containing all normalized files
 
-### PDF Compress
+### Single PDF Compression
 
-#### Single File
 1. Navigate to **PDF Compress**
 2. Upload a PDF file
 3. (Optional) Adjust compression settings
@@ -149,100 +155,93 @@ For OCR functionality, install Tesseract-OCR:
 
 **Example**: `invoice.pdf` (4.2 MB) → `invoice_compressed.pdf` (1.1 MB)
 
-#### Batch Processing
+### Batch PDF Compression
+
 1. Upload multiple files
 2. Click **Compress X PDFs**
 3. Download ZIP with all compressed files
 
----
-
 ## ⚙️ Configuration
 
-### Change Server Port
-Edit `app.py`, line ~1160:
+### Change Port
+Edit `app.py`, line ~1800:
 ```python
 app.run(debug=True, host='0.0.0.0', port=5000)  # Change port here
 ```
 
-### Adjust Upload Limits
-Edit `app.py`, line ~20:
+### Change Upload Size Limit
+Edit `app.py`, line ~22:
 ```python
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB
 ```
 
-### Compression Settings
+### Customize Compression
 Modify compression options in `app.py`:
 ```python
 options = {
     'max_image_size': (1920, 1920),  # Max image dimensions
-    'jpeg_quality': 85,               # JPEG quality (0-100)
-    'aggressive': False               # Aggressive compression
+    'jpeg_quality': 85,              # JPEG quality (0-100)
+    'aggressive': False              # Aggressive compression
 }
 ```
-
----
 
 ## 📁 Project Structure
 
 ```
 pdfforge/
-├── app.py                      # Main Flask application
-├── requirements.txt            # Python dependencies
-├── README.md                   # This file
-├── templates/                  # HTML templates
-│   ├── index.html             # Homepage
-│   ├── merge.html             # Merge tool page
-│   ├── normalize.html         # Normalize tool page
-│   └── compress.html          # Compress tool page
-└── .venv/                     # Virtual environment (not in repo)
+├── app.py              # Main Flask application
+├── requirements.txt    # Python dependencies
+├── README.md          # This file
+├── templates/         # HTML templates
+│   ├── index.html     # Homepage with feature grid
+│   ├── merge.html     # Merge tool with drag-and-drop reordering
+│   ├── normalize.html # Normalize tool page
+│   └── compress.html  # Compress tool page
+└── .venv/            # Virtual environment (not in repo)
 ```
 
----
+## 📋 Feature Options
 
-## 🎯 Advanced Features
-
-### Merge Options Explained
+### Merge Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| **Mode** | Simple or Headers | Simple |
-| **Page Start** | Starting page number | 1 |
-| **Output Filename** | Custom output name | First file's name + `_merged` |
-| **Smart Spacing** | Auto-adjust for headers | Enabled |
-| **Footer Line** | Add footer separator | Disabled |
+| Mode | Simple or Headers | Simple |
+| File Order | Drag-and-drop to reorder | Upload order |
+| Page Start | Starting page number | 1 |
+| Output Filename | Custom output name | First file's name + `_merged` |
+| Smart Spacing | Auto-adjust for headers | Enabled |
+| Page Number Position | top-center, bottom-center, etc. | bottom-center |
+| Add Bookmarks | Create bookmarks for each file | Enabled |
 
-### Normalize Options
+### Normalize Page Sizes
 
-| Option | Description |
-|--------|-------------|
-| **Letter** | 8.5" × 11" (612 × 792 pt) |
-| **Legal** | 8.5" × 14" (612 × 1008 pt) |
-| **A4** | 210 × 297 mm (595 × 842 pt) |
-| **A3** | 297 × 420 mm (842 × 1191 pt) |
-| **A5** | 148 × 210 mm (420 × 595 pt) |
-| **OCR** | Add searchable text layer |
+| Size | Dimensions |
+|------|-----------|
+| Letter | 8.5" × 11" (612 × 792 pt) |
+| Legal | 8.5" × 14" (612 × 1008 pt) |
+| A4 | 210 × 297 mm (595 × 842 pt) |
+| A3 | 297 × 420 mm (842 × 1191 pt) |
+| A5 | 148 × 210 mm (420 × 595 pt) |
+| OCR | Add searchable text layer |
 
-### Compress Options
+### Compression Settings
 
 | Setting | Description | Impact |
 |---------|-------------|--------|
-| **Standard** | Balanced compression | Moderate reduction |
-| **Aggressive** | Maximum compression | Larger reduction, may affect quality |
-| **Max Image Size** | Downscale large images | Configurable (default: 1920×1920) |
+| Standard | Balanced compression | Moderate reduction |
+| Aggressive | Maximum compression | Larger reduction, may affect quality |
+| Max Image Size | Downscale large images | Configurable (default: 1920×1920) |
 
----
+## 🐛 Troubleshooting
 
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### "No module named 'fitz'"
+### PyMuPDF Import Error
 **Solution**: Reinstall PyMuPDF
 ```bash
 pip install PyMuPDF --force-reinstall
 ```
 
-#### "Address already in use" (Port 5000)
+### Port Already in Use
 **Solution**: Change port or kill existing process
 ```bash
 # Windows
@@ -253,15 +252,15 @@ taskkill /PID [PID] /F
 lsof -ti:5000 | xargs kill -9
 ```
 
-#### OCR not working
+### OCR Not Working
 **Solution**: Install Tesseract-OCR on your system
-- Windows: Download from [GitHub](https://github.com/UB-Mannheim/tesseract/wiki)
-- Update path in app.py if needed:
-  ```python
-  pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-  ```
+- **Windows**: Download from [GitHub](https://github.com/UB-Mannheim/tesseract/wiki)
+- Update path in `app.py` if needed:
+```python
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+```
 
-#### Python 3.13 Installation Issues
+### Python 3.13 Compatibility Issues
 **Solution**: Use Python 3.12 instead
 ```bash
 # Download Python 3.12 from python.org
@@ -270,16 +269,12 @@ py -3.12 -m venv .venv
 pip install -r requirements.txt
 ```
 
----
-
-## 🐛 Known Limitations
+## ⚠️ Limitations
 
 - **Max File Size**: 500MB per file (configurable)
 - **OCR**: Requires Tesseract-OCR installed separately
 - **Header Mode**: Scales pages to Letter size (8.5" × 11")
 - **Python 3.13**: Limited package support (use 3.12 recommended)
-
----
 
 ## 🗺️ Roadmap
 
@@ -290,10 +285,11 @@ pip install -r requirements.txt
 - [ ] **Password Protection**: Encrypt PDFs with passwords
 - [ ] **Digital Signatures**: Sign PDFs digitally
 - [ ] **Form Filling**: Fill PDF forms programmatically
-- [ ] **Bookmark Management**: Add/edit PDF bookmarks
+- [ ] **Bookmark Management**: Enhanced bookmark editing
 - [ ] **Page Rotation**: Rotate individual pages
+- [ ] **Multiple output formats**: Export to Word, Excel, etc.
 
-### Future Improvements
+### Infrastructure
 - [ ] Docker support
 - [ ] REST API
 - [ ] Batch queue system
@@ -303,28 +299,18 @@ pip install -r requirements.txt
 - [ ] Custom templates for headers
 - [ ] Dark mode UI
 
----
-
 ## 🤝 Contributing
 
 Contributions are welcome! Here's how you can help:
 
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Commit your changes**
-   ```bash
-   git commit -m 'Add amazing feature'
-   ```
-4. **Push to the branch**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-5. **Open a Pull Request**
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
 ### Development Setup
+
 ```bash
 # Clone your fork
 git clone https://github.com/yourusername/pdfforge.git
@@ -342,13 +328,12 @@ pip install -r requirements.txt
 python app.py
 ```
 
-### Code Style
+### Coding Standards
 - Follow PEP 8 guidelines
 - Use meaningful variable names
 - Add comments for complex logic
 - Update README for new features
-
----
+- Write tests for new functionality
 
 ## 📄 License
 
@@ -378,11 +363,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
----
-
 ## 🙏 Acknowledgments
 
-### Built With
 - [Flask](https://flask.palletsprojects.com/) - Web framework
 - [PyMuPDF](https://pymupdf.readthedocs.io/) - PDF manipulation
 - [pdfplumber](https://github.com/jsvine/pdfplumber) - PDF text extraction
@@ -390,39 +372,38 @@ SOFTWARE.
 - [pytesseract](https://github.com/madmaze/pytesseract) - OCR wrapper
 - [Werkzeug](https://werkzeug.palletsprojects.com/) - WSGI utilities
 
-### Inspired By
+### Similar Tools
 - Adobe Acrobat
 - Smallpdf
 - PDFtk
 
-### Special Thanks
+### Credits
 - MuPDF team for the excellent PDF library
 - Flask community for the robust web framework
 - All contributors and users
 
----
+## 📞 Contact
 
-## 📧 Contact
-
-- **GitHub Issues**: [Report a bug](https://github.com/yourusername/pdfforge/issues)
-- **Email**: oscar2song@gmail.com
-- **Website**: https://your-website.com
-
----
+- **GitHub Issues**: [Report a bug](https://github.com/oscar2song/pdfforge/issues)
+- **Email**: [oscar2song@gmail.com](mailto:oscar2song@gmail.com)
 
 ## 📊 Stats
 
-- **Current Version**: 1.0.0 
-- **Total Features**: 3 main tools, 15+ options
-- **Lines of Code**: ~1,300
+- **Current Version**: 1.1.0
+- **Total Features**: 3 main tools, 20+ options
+- **Lines of Code**: ~1,800
 - **Python Version**: 3.12+
 - **Active Development**: Yes ✅
 
----
+## 📝 Changelog
 
-## 📈 Version History
+### v1.1.0 (2025-10-29)
+- ✨ **NEW**: Drag-and-drop file reordering in PDF Merge
+- ✨ File order badges showing merge sequence
+- ✨ Visual feedback during drag operations
+- 🐛 Bug fixes and performance improvements
 
-### Version 1.0.0 (2025-10-28) - INITIAL RELEASE
+### v1.0.0 (2025-10-28)
 - 🎉 Initial release
 - ✨ PDF Merge with headers
 - ✨ PDF Normalize with OCR
@@ -432,14 +413,6 @@ SOFTWARE.
 
 ---
 
-<div align="center">
-
 Made with ❤️ by the PDFForge Team
 
-⭐ Star this repo if you find it useful! ⭐
-
-[Report Bug](https://github.com/yourusername/pdfforge/issues) · 
-[Request Feature](https://github.com/yourusername/pdfforge/issues) · 
-[Documentation](https://github.com/yourusername/pdfforge/wiki)
-
-</div>
+⭐ **Star this repo if you find it useful!** ⭐
