@@ -103,6 +103,48 @@
             font-size: 1.1em;
         }
 
+        /* Drag and drop reordering styles */
+        .file-item {
+            cursor: move !important;
+            transition: all 0.2s ease;
+        }
+
+        .file-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing !important;
+        }
+
+        .file-item.drag-over {
+            border: 2px solid #667eea;
+            background: #e8eeff;
+        }
+
+        .drag-handle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: grab;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .drag-icon {
+            font-size: 1.5em;
+            color: #667eea;
+            user-select: none;
+        }
+
+        .file-order-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
         .remove-btn {
             background: #f44336;
             color: white;
@@ -592,9 +634,13 @@
             const disabledClass = showHeaders ? '' : 'disabled';
 
             fileList.innerHTML = uploadedFiles.map((file, index) => `
-                <div class="file-item">
+                <div class="file-item" draggable="true" data-index="${index}">
                     <div class="file-header">
-                        <div class="file-name">📄 ${file.name}</div>
+                        <div class="drag-handle">
+                            <span class="drag-icon">☰</span>
+                            <span class="file-order-badge">#${index + 1}</span>
+                            <div class="file-name">📄 ${file.name}</div>
+                        </div>
                         <button class="remove-btn" onclick="removeFile(${index})">Remove</button>
                     </div>
                     <div class="file-headers ${disabledClass}">
@@ -628,6 +674,86 @@
 
             mergeBtn.disabled = false;
             mergeBtn.textContent = `Merge ${uploadedFiles.length} PDF${uploadedFiles.length > 1 ? 's' : ''}`;
+
+            // Add drag and drop event listeners for reordering
+            attachDragListeners();
+        }
+
+        // Drag and drop functionality for reordering files
+        let draggedElement = null;
+        let draggedIndex = null;
+
+        function attachDragListeners() {
+            const fileItems = document.querySelectorAll('.file-item');
+
+            fileItems.forEach((item, index) => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragenter', handleDragEnter);
+                item.addEventListener('dragleave', handleDragLeave);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedElement = e.currentTarget;
+            draggedIndex = parseInt(draggedElement.dataset.index);
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            if (e.currentTarget !== draggedElement) {
+                e.currentTarget.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            e.preventDefault();
+
+            const dropTarget = e.currentTarget;
+            const dropIndex = parseInt(dropTarget.dataset.index);
+
+            if (draggedElement !== dropTarget && draggedIndex !== null) {
+                // Reorder the array
+                const draggedFile = uploadedFiles[draggedIndex];
+                uploadedFiles.splice(draggedIndex, 1);
+                uploadedFiles.splice(dropIndex, 0, draggedFile);
+
+                // Update the display
+                updateFileList();
+            }
+
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+
+            // Remove all drag-over classes
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+
+            draggedElement = null;
+            draggedIndex = null;
         }
 
         function updateFileHeader(index, lineNumber, value) {
