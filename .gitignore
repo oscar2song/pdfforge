@@ -1,6 +1,7 @@
 # PDFForge .gitignore
 
 # Python
+__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -89,6 +90,7 @@ desktop.ini
 # PDFForge specific
 uploads/
 temp/
+tmp/
 output/
 *.pdf
 *.zip
@@ -112,3 +114,17 @@ site/
 # Local configuration
 config.local.py
 settings.local.py
+
+logs/
+
+# Uploads
+/tmp/
+
+# Test files
+test_files/
+fixtures/
+
+# Coverage
+.coverage.*
+
+local/

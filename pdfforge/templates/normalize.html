@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="tool-page">
+    <h1>Normalize PDFs</h1>
+    <p class="page-description">Standardize page sizes, add OCR text layers, and optimize document structure.</p>
+
+    <div class="tool-interface">
+        <div class="upload-section">
+            <h3>Upload PDF Files</h3>
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
+                <div class="upload-placeholder">
+                    <p>Drag & drop PDF files here or click to browse</p>
+                    <p class="upload-hint">Single file or batch processing supported</p>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+                    Select Files
+                </button>
+            </div>
+            <div id="fileList" class="file-list"></div>
+        </div>
+
+        <div class="options-section">
+            <h3>Normalization Options</h3>
+
+            <div class="option-group">
+                <div class="form-row">
+                    <label>Page Size:</label>
+                    <select id="pageSize" class="form-select">
+                        <option value="letter">Letter (8.5" x 11")</option>
+                        <option value="legal">Legal (8.5" x 14")</option>
+                        <option value="A4">A4 (210mm x 297mm)</option>
+                        <option value="A3">A3 (297mm x 420mm)</option>
+                        <option value="A5">A5 (148mm x 210mm)</option>
+                        <option value="custom">Custom Size</option>
+                    </select>
+                </div>
+
+                <div id="customSizeOptions" class="sub-options" style="display: none;">
+                    <div class="form-row">
+                        <label>Width (points):</label>
+                        <input type="number" id="customWidth" value="612" min="100" max="2000" class="form-input">
+                    </div>
+                    <div class="form-row">
+                        <label>Height (points):</label>
+                        <input type="number" id="customHeight" value="792" min="100" max="2000" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <div class="form-row">
+                    <label>Orientation:</label>
+                    <select id="orientation" class="form-select">
+                        <option value="portrait">Portrait</option>
+                        <option value="landscape">Landscape</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">
+                    <input type="checkbox" id="addHeaderFooterSpace" name="addHeaderFooterSpace">
+                    Add Header/Footer Space
+                </label>
+                <p class="option-description">Reserve space for headers and footers (recommended for scanned PDFs)</p>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">
+                    <input type="checkbox" id="addOCR" name="addOCR">
+                    Add OCR Text Layer
+                </label>
+                <div id="ocrOptions" class="sub-options" style="display: none;">
+                    <label class="option-label">
+                        <input type="checkbox" id="forceOCR" name="forceOCR">
+                        Force OCR (even if text exists)
+                    </label>
+                    <p class="option-description">OCR makes scanned documents searchable and selectable</p>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label>Output Filename (single file):</label>
+                <input type="text" id="outputFilename" placeholder="normalized.pdf" class="form-input">
+            </div>
+        </div>
+
+        <div class="action-section">
+            <button id="normalizeButton" class="btn btn-primary btn-large" disabled>
+                Normalize PDF(s)
+            </button>
+            <button id="resetButton" class="btn btn-secondary">
+                Reset
+            </button>
+        </div>
+
+        <div id="resultSection" class="result-section" style="display: none;">
+            <h3>Normalization Complete!</h3>
+            <div id="resultInfo"></div>
+            <a id="downloadLink" class="btn btn-success" download>
+                Download Normalized PDF
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/normalize.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="tool-page">
+    <h1>Merge PDFs</h1>
+    <p class="page-description">Combine multiple PDF files into a single document with advanced formatting options.</p>
+
+    <div class="tool-interface">
+        <div class="upload-section">
+            <h3>Upload PDF Files</h3>
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
+                <div class="upload-placeholder">
+                    <p>Drag & drop PDF files here or click to browse</p>
+                    <p class="upload-hint">You can select multiple files</p>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+                    Select Files
+                </button>
+            </div>
+            <div id="fileList" class="file-list"></div>
+        </div>
+
+        <div class="options-section">
+            <h3>Merge Options</h3>
+
+            <div class="option-group">
+                <label class="option-label">
+                    <input type="checkbox" id="addHeaders" name="addHeaders">
+                    Add Headers
+                </label>
+                <div id="headerOptions" class="sub-options" style="display: none;">
+                    <div class="form-row">
+                        <input type="text" id="headerLine1" placeholder="Header line 1 (optional)" class="form-input">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="headerLine2" placeholder="Header line 2 (optional)" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">
+                    <input type="checkbox" id="addPageNumbers" name="addPageNumbers" checked>
+                    Add Page Numbers
+                </label>
+                <div id="pageNumberOptions" class="sub-options">
+                    <div class="form-row">
+                        <label>Position:</label>
+                        <select id="pageNumberPosition" class="form-select">
+                            <option value="bottom-center">Bottom Center</option>
+                            <option value="top-center">Top Center</option>
+                            <option value="top-right">Top Right</option>
+                            <option value="bottom-right">Bottom Right</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>Font Size:</label>
+                        <input type="number" id="pageNumberFontSize" value="12" min="6" max="72" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">
+                    <input type="checkbox" id="addBookmarks" name="addBookmarks" checked>
+                    Add Bookmarks
+                </label>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">
+                    <input type="checkbox" id="addFooterLine" name="addFooterLine">
+                    Add Footer Line
+                </label>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">
+                    <input type="checkbox" id="smartSpacing" name="smartSpacing" checked>
+                    Smart Spacing
+                </label>
+                <p class="option-description">Automatically adjust spacing to avoid content conflicts</p>
+            </div>
+
+            <div class="form-row">
+                <label>Starting Page Number:</label>
+                <input type="number" id="pageStart" value="1" min="1" class="form-input">
+            </div>
+
+            <div class="form-row">
+                <label>Output Filename:</label>
+                <input type="text" id="outputFilename" placeholder="merged.pdf" class="form-input">
+            </div>
+        </div>
+
+        <div class="action-section">
+            <button id="mergeButton" class="btn btn-primary btn-large" disabled>
+                Merge PDFs
+            </button>
+            <button id="resetButton" class="btn btn-secondary">
+                Reset
+            </button>
+        </div>
+
+        <div id="resultSection" class="result-section" style="display: none;">
+            <h3>Merge Complete!</h3>
+            <div id="resultInfo"></div>
+            <a id="downloadLink" class="btn btn-success" download>
+                Download Merged PDF
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/merge.js') }}"></script>
+{% endblock %}
