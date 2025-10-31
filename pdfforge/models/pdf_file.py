@@ -1,11 +1,14 @@
 """
 PDF File Data Model
 """
-
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict
 import os
 
+from pdfforge.exceptions.pdf_exceptions import PDFAnalysisError
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class PDFFile:

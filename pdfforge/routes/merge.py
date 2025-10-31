@@ -4,13 +4,12 @@ Merge Routes - HTTP Request Handlers
 
 import logging
 import os
-from typing import List, Dict, Any
 
-from flask import Blueprint, current_app, jsonify, render_template, request, send_file
+from flask import Blueprint, jsonify, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
 from ..services.merge_service import MergeService
-from ..utils.file_utils import cleanup_temp_files, save_uploaded_file, create_output_filename
+from ..utils.file_utils import save_uploaded_file
 from ..utils.validation import allowed_file
 
 logger = logging.getLogger(__name__)
