@@ -36,8 +36,13 @@ class MergeManager {
         // Merge mode change
         document.querySelectorAll('input[name="mergeMode"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
-                this.updateHeadersVisibility();
+                this.updateMergeMode();
             });
+        });
+
+        // Enhanced options toggles
+        document.getElementById('addHeaders').addEventListener('change', (e) => {
+            this.updateHeadersVisibility();
         });
 
         // Action buttons
@@ -49,14 +54,33 @@ class MergeManager {
             this.reset();
         });
 
-        // Initialize headers visibility
-        this.updateHeadersVisibility();
+        // Initialize UI state
+        this.updateMergeMode();
+    }
+
+    updateMergeMode() {
+        const isEnhancedMode = document.querySelector('input[name="mergeMode"]:checked').value === 'enhanced';
+        const enhancedOptions = document.getElementById('enhancedOptions');
+
+        if (isEnhancedMode) {
+            enhancedOptions.style.display = 'block';
+            this.updateHeadersVisibility();
+        } else {
+            enhancedOptions.style.display = 'none';
+            // Hide all headers in file list for simple mode
+            document.querySelectorAll('.file-headers').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
     }
 
     updateHeadersVisibility() {
-        const headerMode = document.querySelector('input[name="mergeMode"]:checked').value === 'headers';
+        const isEnhancedMode = document.querySelector('input[name="mergeMode"]:checked').value === 'enhanced';
+        const addHeaders = document.getElementById('addHeaders').checked;
+        const showHeaders = isEnhancedMode && addHeaders;
+
         document.querySelectorAll('.file-headers').forEach(el => {
-            el.style.display = headerMode ? 'block' : 'none';
+            el.style.display = showHeaders ? 'block' : 'none';
         });
     }
 
@@ -211,14 +235,35 @@ class MergeManager {
 
     getOptions() {
         const mergeMode = document.querySelector('input[name="mergeMode"]:checked').value;
+        const isEnhancedMode = mergeMode === 'enhanced';
 
+        if (!isEnhancedMode) {
+            // Simple merge - no transformations
+            return {
+                add_headers: false,
+                page_start: 1,
+                output_filename: document.getElementById('outputFilename').value || '',
+                scale_factor: 1.0, // No scaling
+                scale_factor_optimized: 1.0, // No scaling
+                add_footer_line: false,
+                smart_spacing: false,
+                add_page_numbers: false, // No page numbers
+                page_number_position: "bottom-center",
+                page_number_font_size: 12,
+                add_bookmarks: false // No bookmarks in simple mode
+            };
+        }
+
+        // Enhanced merge with all options
         return {
-            add_headers: mergeMode === 'headers',
+            add_headers: document.getElementById('addHeaders').checked,
             page_start: parseInt(document.getElementById('pageStart').value) || 1,
             output_filename: document.getElementById('outputFilename').value || '',
-            add_footer_line: false, // Keep this false for now
+            scale_factor: 0.96,
+            scale_factor_optimized: 0.99,
+            add_footer_line: false,
             smart_spacing: document.getElementById('smartSpacing').checked,
-            add_page_numbers: true, // Always enabled in new UI
+            add_page_numbers: document.getElementById('addPageNumbers').checked,
             page_number_position: document.getElementById('pageNumberPosition').value,
             page_number_font_size: parseInt(document.getElementById('pageNumberFontSize').value) || 12,
             add_bookmarks: document.getElementById('addBookmarks').checked
@@ -230,8 +275,12 @@ class MergeManager {
         const resultInfo = document.getElementById('resultInfo');
         const downloadLink = document.getElementById('downloadLink');
 
+        const mergeMode = document.querySelector('input[name="mergeMode"]:checked').value;
+        const modeText = mergeMode === 'simple' ? 'Simple merge' : 'Enhanced merge';
+
         resultInfo.innerHTML = `
-            <p>Successfully merged ${result.file_count} files into ${result.page_count} pages</p>
+            <p>${modeText} completed successfully!</p>
+            <p>Merged ${result.file_count} files into ${result.page_count} pages</p>
             ${result.add_bookmarks ? `<p>Added bookmarks for each file</p>` : ''}
         `;
 
@@ -245,7 +294,8 @@ class MergeManager {
     updateUI() {
         const fileList = document.getElementById('fileList');
         const mergeButton = document.getElementById('mergeButton');
-        const headerMode = document.querySelector('input[name="mergeMode"]:checked').value === 'headers';
+        const isEnhancedMode = document.querySelector('input[name="mergeMode"]:checked').value === 'enhanced';
+        const showHeaders = isEnhancedMode && document.getElementById('addHeaders').checked;
 
         // Update file list with drag & drop and individual headers
         fileList.innerHTML = this.files.map((fileInfo, index) => `
@@ -268,7 +318,7 @@ class MergeManager {
                     ×
                 </button>
                 
-                <div class="file-headers" style="display: ${headerMode ? 'block' : 'none'}">
+                <div class="file-headers" style="display: ${showHeaders ? 'block' : 'none'}">
                     <div class="header-input-group">
                         <label>Header Line 1:</label>
                         <input type="text" 
@@ -311,7 +361,13 @@ class MergeManager {
         document.getElementById('fileInput').value = '';
         document.getElementById('outputFilename').value = '';
         document.getElementById('pageStart').value = '1';
+        document.getElementById('addHeaders').checked = false;
+        document.getElementById('addPageNumbers').checked = true;
+        document.getElementById('addBookmarks').checked = true;
+        document.getElementById('smartSpacing').checked = true;
+        document.querySelector('input[name="mergeMode"][value="simple"]').checked = true;
         document.getElementById('resultSection').style.display = 'none';
+        this.updateMergeMode();
         this.updateUI();
         notifications.show('Form reset');
     }

@@ -2,121 +2,175 @@
 PDF Utility Functions
 """
 
-import typing
-from typing import Dict
+import fitz  # type: ignore
+from typing import Dict, Any, Optional
+from ..exceptions.pdf_exceptions import PDFValidationError
 
-import fitz  # type: ignore  # type: ignore  # type: ignore
 
-
-def detect_pdf_type(page: fitz.Page) -> Dict[str, typing.Any]:
+def validate_pdf(file_path: str) -> bool:
     """
-    Detect if PDF page is image-based (scanned) or text-based.
+    Validate that a file is a valid PDF
     """
     try:
-        text_content = page.get_text().strip()
-
-        image_count = 0
-        if "/Resources" in page and "/XObject" in page["/Resources"]:
-            xObject = page["/Resources"]["/XObject"].get_object()
-            for obj in xObject:
-                if xObject[obj]["/Subtype"] == "/Image":
-                    image_count += 1
-
-        is_image_based = len(text_content) < 100 and image_count > 0
-
-        return {
-            "is_image_based": is_image_based,
-            "text_length": len(text_content),
-            "image_count": image_count,
-            "has_content": len(text_content) > 0 or image_count > 0,
-        }
-    except Exception:
-        return {
-            "is_image_based": True,
-            "text_length": 0,
-            "image_count": 0,
-            "has_content": False,
-        }
-
-
-def has_content_in_header_area(page: fitz.Page, threshold_y: int = 60) -> bool:
-    """Detect if page has traditional header that needs extra space."""
-    try:
-        pdf_type = detect_pdf_type(page)
-
-        if pdf_type["is_image_based"]:
+        with fitz.open(file_path) as doc:
+            # If we can open it without errors, it's a valid PDF
+            page_count = len(doc)
+            if page_count == 0:
+                raise PDFValidationError("PDF has no pages")
             return True
+    except Exception as e:
+        raise PDFValidationError(f"Invalid PDF file: {str(e)}")
 
-        header_rect = fitz.Rect(0, 0, page.rect.width, 40)
-        text = page.get_text("text", clip=header_rect).strip()
 
-        if not text:
-            drawings = page.get_drawings()
-            for drawing in drawings:
-                if drawing["rect"].y0 < 40 and drawing["rect"].height < 2:
+def analyze_pdf(file_path: str) -> Dict[str, Any]:
+    """
+    Analyze PDF properties and return analysis results
+    """
+    try:
+        with fitz.open(file_path) as doc:
+            page_count = len(doc)
+
+            # Analyze first page for basic properties
+            if page_count > 0:
+                first_page = doc[0]
+                page_size = first_page.rect
+                page_width = page_size.width
+                page_height = page_size.height
+
+                # Determine page orientation
+                if page_width > page_height:
+                    orientation = "landscape"
+                else:
+                    orientation = "portrait"
+
+                # Determine page size category
+                if page_width > 1000 or page_height > 1000:
+                    size_category = "large"
+                elif page_width < 400 or page_height < 400:
+                    size_category = "small"
+                else:
+                    size_category = "standard"
+            else:
+                page_width = 0
+                page_height = 0
+                orientation = "unknown"
+                size_category = "unknown"
+
+            return {
+                "page_count": page_count,
+                "page_width": page_width,
+                "page_height": page_height,
+                "orientation": orientation,
+                "size_category": size_category,
+                "is_valid": True
+            }
+
+    except Exception as e:
+        return {
+            "page_count": 0,
+            "page_width": 0,
+            "page_height": 0,
+            "orientation": "unknown",
+            "size_category": "unknown",
+            "is_valid": False,
+            "error": str(e)
+        }
+
+
+def is_pdf_scanned(file_path: str) -> bool:
+    """
+    Check if PDF is likely scanned (contains mostly images)
+    """
+    try:
+        with fitz.open(file_path) as doc:
+            text_ratio_threshold = 0.1  # If less than 10% of pages have text, consider it scanned
+
+            pages_with_text = 0
+            total_pages = len(doc)
+
+            for page_num in range(total_pages):
+                page = doc[page_num]
+                text = page.get_text()
+                if text.strip():  # If page has any text
+                    pages_with_text += 1
+
+            text_ratio = pages_with_text / total_pages if total_pages > 0 else 0
+            return text_ratio < text_ratio_threshold
+
+    except Exception:
+        return False
+
+
+def get_pdf_metadata(file_path: str) -> Dict[str, Any]:
+    """
+    Extract PDF metadata
+    """
+    try:
+        with fitz.open(file_path) as doc:
+            metadata = doc.metadata
+            return {
+                "title": metadata.get("title", ""),
+                "author": metadata.get("author", ""),
+                "subject": metadata.get("subject", ""),
+                "keywords": metadata.get("keywords", ""),
+                "creator": metadata.get("creator", ""),
+                "producer": metadata.get("producer", ""),
+                "creation_date": metadata.get("creationDate", ""),
+                "modification_date": metadata.get("modDate", ""),
+                "page_count": len(doc)
+            }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def has_text_layer(file_path: str) -> bool:
+    """
+    Check if PDF has a text layer (not just scanned images)
+    """
+    try:
+        with fitz.open(file_path) as doc:
+            for page_num in range(min(3, len(doc))):  # Check first 3 pages
+                page = doc[page_num]
+                text = page.get_text()
+                if text.strip():  # If page has any text
                     return True
             return False
-
-        lines = text.split("\n")
-        header_keywords = [
-            "confidential",
-            "secret",
-            "internal",
-            "draft",
-            "proprietary",
-            "classified",
-            "restricted",
-        ]
-
-        if len(text) < 100:
-            text_lower = text.lower()
-            if any(keyword in text_lower for keyword in header_keywords):
-                return True
-
-        if len(lines) <= 2 and all(len(line.strip()) < 50 for line in lines):
-            return True
-
-        return False
-
-    except Exception:
-        return True
-
-
-def has_small_top_margin(page: fitz.Page, threshold: int = 80) -> bool:
-    """Detect if page has very small top margin."""
-    try:
-        pdf_type = detect_pdf_type(page)
-
-        if pdf_type["is_image_based"]:
-            return True
-
-        text_dict = page.get_text("dict")
-        if not text_dict or "blocks" not in text_dict:
-            return False
-
-        min_y = float("inf")
-        for block in text_dict["blocks"]:
-            if block.get("type") == 0:
-                if "lines" in block and block["lines"]:
-                    first_line = block["lines"][0]
-                    y_pos = first_line.get("bbox", [0, 0, 0, 0])[1]
-                    min_y = min(min_y, y_pos)
-
-        drawings = page.get_drawings()
-        for drawing in drawings:
-            if drawing["rect"].height > 5:
-                min_y = min(min_y, drawing["rect"].y0)
-
-        return min_y < threshold
-
-    except Exception:
-        return True
-
-
-def has_text_layer(page: fitz.Page) -> bool:
-    """Check if a PDF page has a text layer."""
-    try:
-        text = page.get_text().strip()
-        return len(text) > 10
     except Exception:
         return False
+
+
+def detect_pdf_type(page: fitz.Page) -> Dict[str, Any]:
+    """
+    Detect the type of PDF content on a page
+    """
+    try:
+        # Get text content
+        text = page.get_text()
+        has_text = bool(text.strip())
+
+        # Get images
+        image_list = page.get_images()
+        has_images = len(image_list) > 0
+
+        # Analyze content
+        if has_text and not has_images:
+            pdf_type = "text"
+        elif has_images and not has_text:
+            pdf_type = "image"
+        elif has_text and has_images:
+            pdf_type = "mixed"
+        else:
+            pdf_type = "unknown"
+
+        return {
+            "type": pdf_type,
+            "has_text": has_text,
+            "has_images": has_images,
+            "text_length": len(text),
+            "image_count": len(image_list)
+        }
+    except Exception as e:
+        return {
+            "type": "error",
+            "error": str(e)
+        }
