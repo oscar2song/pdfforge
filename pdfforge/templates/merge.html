@@ -24,29 +24,44 @@
         <div class="options-section">
             <h3>Merge Options</h3>
 
+            <!-- Merge Mode Selection -->
             <div class="option-group">
-                <label class="option-label">
-                    <input type="checkbox" id="addHeaders" name="addHeaders">
-                    Add Headers
-                </label>
-                <div id="headerOptions" class="sub-options" style="display: none;">
-                    <div class="form-row">
-                        <input type="text" id="headerLine1" placeholder="Header line 1 (optional)" class="form-input">
-                    </div>
-                    <div class="form-row">
-                        <input type="text" id="headerLine2" placeholder="Header line 2 (optional)" class="form-input">
-                    </div>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="mergeMode" value="simple" checked>
+                        Simple Merge (Default)
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="mergeMode" value="headers">
+                        Add Headers (Two Lines)
+                        <span class="premium-badge">ENHANCED</span>
+                    </label>
+                </div>
+                <div class="info-box">
+                    <p><strong>Simple Merge:</strong> Fast merge without modifications</p>
+                    <p><strong>Add Headers:</strong> Professional two-line headers + smart spacing + bookmarks</p>
                 </div>
             </div>
 
-            <div class="option-group">
-                <label class="option-label">
-                    <input type="checkbox" id="addPageNumbers" name="addPageNumbers" checked>
-                    Add Page Numbers
-                </label>
-                <div id="pageNumberOptions" class="sub-options">
-                    <div class="form-row">
-                        <label>Position:</label>
+            <!-- Output Filename -->
+            <div class="form-row">
+                <label>Output Filename:</label>
+                <input type="text" id="outputFilename" placeholder="merged.pdf" class="form-input">
+            </div>
+
+            <!-- Page Start Number -->
+            <div class="form-row">
+                <label>Starting Page Number:</label>
+                <input type="number" id="pageStart" value="1" min="1" class="form-input">
+            </div>
+
+            <!-- Advanced Options -->
+            <div class="advanced-options">
+                <h4>Advanced Options</h4>
+
+                <div class="option-row">
+                    <div>
+                        <label>Page Number Position:</label>
                         <select id="pageNumberPosition" class="form-select">
                             <option value="bottom-center">Bottom Center</option>
                             <option value="top-center">Top Center</option>
@@ -54,43 +69,21 @@
                             <option value="bottom-right">Bottom Right</option>
                         </select>
                     </div>
-                    <div class="form-row">
-                        <label>Font Size:</label>
+                    <div>
+                        <label>Page Number Font Size:</label>
                         <input type="number" id="pageNumberFontSize" value="12" min="6" max="72" class="form-input">
                     </div>
                 </div>
-            </div>
 
-            <div class="option-group">
-                <label class="option-label">
-                    <input type="checkbox" id="addBookmarks" name="addBookmarks" checked>
-                    Add Bookmarks
-                </label>
-            </div>
+                <div class="checkbox-option">
+                    <input type="checkbox" id="addBookmarks" checked>
+                    <label>Add bookmarks for each file</label>
+                </div>
 
-            <div class="option-group">
-                <label class="option-label">
-                    <input type="checkbox" id="addFooterLine" name="addFooterLine">
-                    Add Footer Line
-                </label>
-            </div>
-
-            <div class="option-group">
-                <label class="option-label">
-                    <input type="checkbox" id="smartSpacing" name="smartSpacing" checked>
-                    Smart Spacing
-                </label>
-                <p class="option-description">Automatically adjust spacing to avoid content conflicts</p>
-            </div>
-
-            <div class="form-row">
-                <label>Starting Page Number:</label>
-                <input type="number" id="pageStart" value="1" min="1" class="form-input">
-            </div>
-
-            <div class="form-row">
-                <label>Output Filename:</label>
-                <input type="text" id="outputFilename" placeholder="merged.pdf" class="form-input">
+                <div class="checkbox-option">
+                    <input type="checkbox" id="smartSpacing" checked>
+                    <label>Smart page number positioning</label>
+                </div>
             </div>
         </div>
 
@@ -112,6 +105,131 @@
         </div>
     </div>
 </div>
+
+<style>
+/* Drag & Drop Styles */
+.file-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 2px solid transparent;
+    cursor: move;
+    transition: all 0.2s ease;
+}
+
+.file-item.dragging {
+    opacity: 0.5;
+}
+
+.file-item.drag-over {
+    border-color: #667eea;
+    background: #e8eeff;
+}
+
+.drag-handle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: grab;
+}
+
+.drag-icon {
+    font-size: 1.2em;
+    color: #667eea;
+}
+
+.file-order-badge {
+    background: #667eea;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+}
+
+.file-headers {
+    margin-top: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+}
+
+.header-input-group {
+    margin-bottom: 8px;
+}
+
+.header-input-group label {
+    display: block;
+    font-size: 0.8em;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.header-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.radio-group {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.premium-badge {
+    background: #FFD700;
+    color: #333;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7em;
+    font-weight: bold;
+}
+
+.info-box {
+    background: #e8f4f8;
+    border-left: 4px solid #667eea;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.info-box p {
+    margin: 5px 0;
+    font-size: 0.9em;
+}
+
+.advanced-options {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.option-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}

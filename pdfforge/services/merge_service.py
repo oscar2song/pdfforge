@@ -42,7 +42,7 @@ class MergeService:
         try:
             logger.info(f"Starting merge process for {len(file_configs)} files")
 
-            # Convert to PDFFile objects
+            # Convert to PDFFile objects - IMPORTANT: Preserve individual headers
             pdf_files = []
             for config in file_configs:
                 pdf_file = PDFFile.from_dict(config)
@@ -51,7 +51,7 @@ class MergeService:
             # Prepare merge options
             merge_options = MergeOptions.from_dict(options)
 
-            # Perform merge
+            # Use the fixed PDFMerger (NOT LegacyPDFMerger)
             merger = PDFMerger(merge_options)
             merged_doc = merger.merge(pdf_files)
 

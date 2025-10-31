@@ -5,7 +5,7 @@ Handles the low-level PDF merging operations
 
 import os
 import tempfile
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 import fitz  # type: ignore
 
@@ -15,90 +15,138 @@ from ..models.pdf_file import PDFFile
 from ..utils.ocr_utils import get_safe_page_number_position
 
 
+def create_bookmarks(pdf_doc, file_info: List[Dict[str, Any]]):
+    """
+    Create bookmarks/table of contents for merged PDF
+    EXACT COPY from original app.py
+    file_info: [{'name': 'doc1.pdf', 'start_page': 0, 'page_count': 10}, ...]
+    """
+    toc = []
+
+    for info in file_info:
+        # Create bookmark entry: [level, title, page_number]
+        # EXACT app.py logic: +1 because bookmarks are 1-indexed in PDF viewers
+        toc.append([1, info['name'], info['start_page'] + 1])  # THIS IS THE KEY!
+
+    pdf_doc.set_toc(toc)
+
+
 class PDFMerger:
-    """Handles PDF merging operations"""
+    """Handles PDF merging operations using exact app.py logic"""
 
     def __init__(self, options: Optional[MergeOptions] = None):
         self.options = options or MergeOptions()
 
     def merge(self, files: List[PDFFile]) -> fitz.Document:
         """
-        Merge multiple PDF files into one
-
-        Args:
-            files: List of PDFFile objects to merge
-
-        Returns:
-            fitz.Document: Merged PDF document
-
-        Raises:
-            PDFMergeError: If merge fails
+        Merge multiple PDF files into one using EXACT app.py logic
         """
         output_pdf = fitz.open()
         source_pdfs = []  # Keep track of all opened source PDFs
 
         try:
             print("=" * 80)
-            print("PDF MERGE CORE PROCESS")
+            print("PDF MERGE CORE PROCESS - EXACT APP.PY BOOKMARK LOGIC")
             print("=" * 80)
+            print(f"Add headers: {self.options.add_headers}")
+            print(f"Add bookmarks: {self.options.add_bookmarks}")
+            print(f"Starting page number: {self.options.page_start}")
+            print()
 
             total_page_number = self.options.page_start
+            total_pages_processed = 0
+            file_info = []  # For bookmarks - EXACT app.py structure
+            current_page = 0  # Track current page in output PDF (0-indexed)
 
-            for pdf_file in files:
-                print(f"Processing: {pdf_file.name}")
-                try:
-                    source_pdf = fitz.open(pdf_file.path)
-                    source_pdfs.append(source_pdf)  # Keep reference
-                    page_count = len(source_pdf)
+            # Check if all headers are empty (like app.py)
+            if self.options.add_headers:
+                all_headers_empty = all(
+                    not file.header_line1.strip() and not file.header_line2.strip()
+                    for file in files
+                )
+                if all_headers_empty:
+                    print("📝 Note: All headers are empty - merging as-is (simple merge)")
+                    self.options.add_headers = False
 
-                    self._add_file_to_output(output_pdf, source_pdf, pdf_file, total_page_number)
-                    total_page_number += page_count
+            for idx, pdf_file in enumerate(files):
+                file_path = pdf_file.path
 
-                except Exception as e:
-                    print(f"❌ Error processing {pdf_file.name}: {str(e)}")
-                    # Close this specific source PDF if it failed
-                    try:
-                        source_pdf.close()
-                    except:
-                        pass
+                if not os.path.exists(file_path):
+                    print(f"⚠ Warning: File not found - {file_path}")
                     continue
 
-            if self.options.add_bookmarks and len(files) > 1:
-                self._create_bookmarks(output_pdf, files)
+                source_pdf = fitz.open(file_path)
+                source_pdfs.append(source_pdf)
+                page_count = len(source_pdf)
+
+                # Store starting page for bookmarks - EXACT app.py logic
+                # This is 0-indexed position in the output PDF
+                start_page_idx = current_page
+
+                print(f"Processing PDF {idx + 1}: {pdf_file.name} ({page_count} pages)")
+                print(f"  - Start page in output: {start_page_idx} (0-indexed)")
+                print(f"  - Bookmark will point to: {start_page_idx + 1} (1-indexed)")
+
+                # Process each page
+                for page_num in range(page_count):
+                    if self.options.add_headers:
+                        self._process_page_with_headers(
+                            output_pdf,
+                            source_pdf,
+                            page_num,
+                            pdf_file,
+                            total_page_number,
+                        )
+                    else:
+                        self._copy_page_directly(
+                            output_pdf,
+                            source_pdf,
+                            page_num,
+                            total_page_number,
+                        )
+
+                    total_page_number += 1
+                    current_page += 1
+
+                # Track file info for bookmarks - EXACT app.py structure
+                file_info.append({
+                    'name': pdf_file.name_without_extension,
+                    'start_page': start_page_idx,  # 0-indexed start position
+                    'page_count': page_count
+                })
+
+                total_pages_processed += page_count
+
+            # Add bookmarks if requested - EXACT app.py logic
+            if self.options.add_bookmarks and len(file_info) > 1:
+                print(f"\nCreating bookmarks for {len(file_info)} files:")
+                for info in file_info:
+                    print(f"  - '{info['name']}' -> page {info['start_page'] + 1}")
+                create_bookmarks(output_pdf, file_info)
+                print("✓ Bookmarks created")
+
+            if total_pages_processed > 0:
+                print("\n" + "=" * 80)
+                print(f"✓ Merge complete!")
+                print(f"✓ Processed {len(files)} PDF files")
+                print(f"✓ Total {total_pages_processed} pages")
+                print(f"✓ Output PDF has {len(output_pdf)} pages")
+                print("=" * 80)
 
             return output_pdf
 
         except Exception as e:
-            # Close output PDF on error
             try:
                 output_pdf.close()
             except:
                 pass
             raise PDFMergeError(f"Failed to merge PDFs: {str(e)}")
         finally:
-            # Always close all source PDFs
             for source_pdf in source_pdfs:
                 try:
                     source_pdf.close()
                 except:
                     pass
-
-    def _add_file_to_output(self, output_pdf: fitz.Document, source_pdf: fitz.Document, pdf_file: PDFFile,
-                            start_page: int) -> None:
-        """Add a single PDF file to the output document"""
-        for page_num in range(len(source_pdf)):
-            current_page_number = start_page + page_num
-
-            if self.options.add_headers:
-                self._process_page_with_headers(
-                    output_pdf,
-                    source_pdf,
-                    page_num,
-                    pdf_file,
-                    current_page_number,
-                )
-            else:
-                self._copy_page_directly(output_pdf, source_pdf, page_num, current_page_number)
 
     def _process_page_with_headers(
             self,
@@ -156,11 +204,11 @@ class PDFMerger:
         output_pdf.insert_pdf(source_pdf, from_page=page_num, to_page=page_num)
 
         if self.options.add_page_numbers:
-            new_page = output_pdf[-1]
+            new_page = output_pdf[-1]  # Get the last page we just added
             self._add_page_number_only(new_page, page_number)
 
     def _add_header_footer(self, page: fitz.Page, pdf_file: PDFFile, page_number: int):
-        """Add headers and footers to page"""
+        """Add headers and footers to page using individual file headers"""
         header_notes = [pdf_file.header_line1, pdf_file.header_line2]
         page_width = page.rect.width
         page_height = page.rect.height
@@ -192,21 +240,12 @@ class PDFMerger:
         if self.options.add_page_numbers:
             self._add_page_number_only(page, page_number)
 
-        # Add header separator
+        # Add header separator only if headers are present
         if header_notes[0] or header_notes[1]:
             header_line_y = 45
             page.draw_line(
                 (margin, header_line_y),
                 (page_width - margin, header_line_y),
-                width=0.5,
-            )
-
-        # Add footer line if requested
-        if self.options.add_footer_line:
-            footer_line_y = page_height - 25
-            page.draw_line(
-                (margin, footer_line_y),
-                (page_width - margin, footer_line_y),
                 width=0.5,
             )
 
@@ -225,65 +264,24 @@ class PDFMerger:
 
         # Calculate coordinates
         if safe_position == "top-center":
-            x = (
-                        page_width
-                        - fitz.get_text_length(
-                    page_text,
-                    fontsize=self.options.page_number_font_size,
-                    fontname="helv",
-                )
-                ) / 2
+            x = (page_width - fitz.get_text_length(page_text, fontsize=self.options.page_number_font_size, fontname="helv")) / 2
             y = 25
         elif safe_position == "bottom-center":
-            x = (
-                        page_width
-                        - fitz.get_text_length(
-                    page_text,
-                    fontsize=self.options.page_number_font_size,
-                    fontname="helv",
-                )
-                ) / 2
+            x = (page_width - fitz.get_text_length(page_text, fontsize=self.options.page_number_font_size, fontname="helv")) / 2
             y = page_height - 25
         elif safe_position == "top-right":
-            x = (
-                    page_width
-                    - fitz.get_text_length(
-                page_text,
-                fontsize=self.options.page_number_font_size,
-                fontname="helv",
-            )
-                    - 25
-            )
+            x = page_width - fitz.get_text_length(page_text, fontsize=self.options.page_number_font_size, fontname="helv") - 25
             y = 25
         elif safe_position == "bottom-right":
-            x = (
-                    page_width
-                    - fitz.get_text_length(
-                page_text,
-                fontsize=self.options.page_number_font_size,
-                fontname="helv",
-            )
-                    - 25
-            )
+            x = page_width - fitz.get_text_length(page_text, fontsize=self.options.page_number_font_size, fontname="helv") - 25
             y = page_height - 25
         else:
-            x = (
-                        page_width
-                        - fitz.get_text_length(
-                    page_text,
-                    fontsize=self.options.page_number_font_size,
-                    fontname="helv",
-                )
-                ) / 2
+            x = (page_width - fitz.get_text_length(page_text, fontsize=self.options.page_number_font_size, fontname="helv")) / 2
             y = 25
 
         # Add semi-transparent background
         bg_padding = 5
-        text_width = fitz.get_text_length(
-            page_text,
-            fontsize=self.options.page_number_font_size,
-            fontname="helv",
-        )
+        text_width = fitz.get_text_length(page_text, fontsize=self.options.page_number_font_size, fontname="helv")
         bg_rect = fitz.Rect(
             x - bg_padding,
             y - self.options.page_number_font_size - bg_padding,
@@ -293,31 +291,7 @@ class PDFMerger:
         page.draw_rect(bg_rect, color=(1, 1, 1), fill=(1, 1, 1), fill_opacity=0.7)
 
         # Insert page number
-        page.insert_text(
-            (x, y),
-            page_text,
-            fontsize=self.options.page_number_font_size,
-            fontname="helv",
-        )
-
-    def _create_bookmarks(self, output_pdf: fitz.Document, files: List[PDFFile]):
-        """Create bookmarks for merged documents"""
-        toc = []
-        current_page = 0
-
-        for pdf_file in files:
-            # Get actual page count by opening the file temporarily
-            try:
-                with fitz.open(pdf_file.path) as doc:
-                    page_count = len(doc)
-                    toc.append([1, pdf_file.name_without_extension, current_page])
-                    current_page += page_count
-            except:
-                # Fallback if we can't open the file
-                toc.append([1, pdf_file.name_without_extension, current_page])
-                current_page += 1  # Assume at least 1 page
-
-        output_pdf.set_toc(toc)
+        page.insert_text((x, y), page_text, fontsize=self.options.page_number_font_size, fontname="helv")
 
 
 # Standalone function for backward compatibility
