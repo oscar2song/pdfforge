@@ -21,6 +21,7 @@ class MergeOptions:
     page_number_position: str = "bottom-center"
     page_number_font_size: int = 12
     add_bookmarks: bool = True
+    add_toc: bool = True
 
     @classmethod
     def from_dict(cls, data: Optional[Dict[str, Any]]) -> "MergeOptions":
@@ -40,6 +41,7 @@ class MergeOptions:
             page_number_position=data.get("page_number_position", "bottom-center"),
             page_number_font_size=data.get("page_number_font_size", 12),
             add_bookmarks=data.get("add_bookmarks", True),
+            add_toc=data.get("add_toc", True),
         )
 
     def validate(self):
@@ -79,4 +81,6 @@ class MergeOptions:
             "page_number_position": self.page_number_position,
             "page_number_font_size": self.page_number_font_size,
             "add_bookmarks": self.add_bookmarks,
+            "add_toc": self.add_toc,
+
         }

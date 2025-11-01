@@ -45,6 +45,11 @@ class MergeManager {
             this.updateHeadersVisibility();
         });
 
+        // TOC option change
+        document.getElementById('addTOC').addEventListener('change', (e) => {
+            this.updateTOCVisibility();
+        });
+
         // Action buttons
         document.getElementById('mergeButton').addEventListener('click', () => {
             this.mergeFiles();
@@ -65,6 +70,7 @@ class MergeManager {
         if (isEnhancedMode) {
             enhancedOptions.style.display = 'block';
             this.updateHeadersVisibility();
+            this.updateTOCVisibility();
         } else {
             enhancedOptions.style.display = 'none';
             // Hide all headers in file list for simple mode
@@ -82,6 +88,17 @@ class MergeManager {
         document.querySelectorAll('.file-headers').forEach(el => {
             el.style.display = showHeaders ? 'block' : 'none';
         });
+    }
+
+    updateTOCVisibility() {
+        const isEnhancedMode = document.querySelector('input[name="mergeMode"]:checked').value === 'enhanced';
+        const addTOC = document.getElementById('addTOC').checked;
+        const showTOC = isEnhancedMode && addTOC;
+
+        const tocOptions = document.getElementById('tocOptions');
+        if (tocOptions) {
+            tocOptions.style.display = showTOC ? 'block' : 'none';
+        }
     }
 
     handleFiles(fileList) {
@@ -250,7 +267,8 @@ class MergeManager {
                 add_page_numbers: false, // No page numbers
                 page_number_position: "bottom-center",
                 page_number_font_size: 12,
-                add_bookmarks: false // No bookmarks in simple mode
+                add_bookmarks: false, // No bookmarks in simple mode
+                add_toc: false // No TOC in simple mode
             };
         }
 
@@ -266,7 +284,8 @@ class MergeManager {
             add_page_numbers: document.getElementById('addPageNumbers').checked,
             page_number_position: document.getElementById('pageNumberPosition').value,
             page_number_font_size: parseInt(document.getElementById('pageNumberFontSize').value) || 12,
-            add_bookmarks: document.getElementById('addBookmarks').checked
+            add_bookmarks: document.getElementById('addBookmarks').checked,
+            add_toc: document.getElementById('addTOC').checked // New TOC option
         };
     }
 
@@ -281,7 +300,8 @@ class MergeManager {
         resultInfo.innerHTML = `
             <p>${modeText} completed successfully!</p>
             <p>Merged ${result.file_count} files into ${result.page_count} pages</p>
-            ${result.add_bookmarks ? `<p>Added bookmarks for each file</p>` : ''}
+            ${result.add_bookmarks ? `<p>✓ Added bookmarks for each file</p>` : ''}
+            ${result.add_toc ? `<p>✓ Added clickable Table of Contents</p>` : ''}
         `;
 
         downloadLink.href = result.download_url;
@@ -364,6 +384,7 @@ class MergeManager {
         document.getElementById('addHeaders').checked = false;
         document.getElementById('addPageNumbers').checked = true;
         document.getElementById('addBookmarks').checked = true;
+        document.getElementById('addTOC').checked = true; // Default to checked
         document.getElementById('smartSpacing').checked = true;
         document.querySelector('input[name="mergeMode"][value="simple"]').checked = true;
         document.getElementById('resultSection').style.display = 'none';

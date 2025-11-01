@@ -70,6 +70,10 @@ class MergeService:
             merged_doc.close()
             merged_doc = None
 
+            # Log TOC creation if enabled
+            if merge_options.add_toc:
+                logger.info(f"Table of Contents created in merged PDF")
+
             logger.info(f"Merge completed: {output_filename} with {page_count} pages")
             logger.info(f"File saved to: {final_output_path}")
 
@@ -79,6 +83,8 @@ class MergeService:
                 "filename": output_filename,
                 "page_count": page_count,
                 "file_count": file_count,
+                "add_bookmarks": merge_options.add_bookmarks,
+                "add_toc": merge_options.add_toc,  # Add TOC status to response
             }
 
         except Exception as e:
