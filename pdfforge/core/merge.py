@@ -178,19 +178,23 @@ class PDFMerger:
 
     def _create_toc_page(self, output_pdf: fitz.Document, files: List[PDFFile]) -> Dict[str, Any]:
         """
-        Create a table of contents page (without clickable links)
-        Returns information about the TOC page for reference
+        Create a table of contents page with correct page numbering
+        TOC displays content page numbers without affecting actual numbering
         """
         # Create a new page for TOC - NO headers or page numbers
         toc_page = output_pdf.new_page(-1, width=612, height=792)
 
-        # Add title
+        # Add title - CENTER ALIGNED
         title = "Table of Contents"
         title_font_size = 18
         title_y = 50
 
+        # Calculate title width for center alignment
+        title_width = ProjectFontManager.get_text_length(title, fontsize=title_font_size, variant='regular')
+        title_x = (612 - title_width) / 2
+
         ProjectFontManager.insert_text_with_font(
-            toc_page, (50, title_y),
+            toc_page, (title_x, title_y),
             title,
             fontsize=title_font_size,
             variant='regular',
@@ -210,9 +214,8 @@ class PDFMerger:
         line_height = 20
         current_y = entry_start_y
 
-        # Track CONTENT page numbers
-        #current_content_page = 2  # TOC is page 1, content starts at page 2
-        current_content_page = 1  # Don't count TOC , content starts at page 1
+        # Track CONTENT page numbers (starting from user-defined start)
+        current_content_page = self.options.page_start
 
         # Calculate total pages for each document
         doc_page_counts = []
@@ -229,7 +232,7 @@ class PDFMerger:
                 break
 
             entry_text = f"{idx + 1}. {pdf_file.name}"
-            page_text = f"Page {current_content_page}"
+            page_text = f"{current_content_page}"  # Just the page number, left aligned
 
             # Add entry text (left-aligned)
             ProjectFontManager.insert_text_with_font(
@@ -240,10 +243,11 @@ class PDFMerger:
                 color=(0, 0, 0)
             )
 
-            # Add page number (right-aligned)
-            page_text_width = ProjectFontManager.get_text_length(page_text, fontsize=12, variant='regular')
+            # Add page number (LEFT ALIGNED at consistent position)
+            # Use fixed position for page numbers to ensure alignment
+            page_number_x = 500  # Fixed position for page numbers
             ProjectFontManager.insert_text_with_font(
-                toc_page, (562 - page_text_width, current_y),
+                toc_page, (page_number_x, current_y),
                 page_text,
                 fontsize=12,
                 variant='regular',
@@ -269,7 +273,8 @@ class PDFMerger:
         )
 
         print("✓ Table of Contents page created")
-        print(f"  - TOC references content pages starting at Page 2")
+        print(f"  - TOC references content pages starting at Page {self.options.page_start}")
+        print(f"  - Content page numbers are preserved correctly")
         print(f"  - Use bookmarks for navigation")
 
         return {
