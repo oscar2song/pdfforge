@@ -3,12 +3,15 @@
 Download Routes - UPDATED with File Manager
 """
 
+import logging
 import os
 from pathlib import Path
 
 from flask import Blueprint, abort, current_app, jsonify, send_file
 
 from ..utils.file_manager import get_file_manager
+
+logger = logging.getLogger(__name__)
 
 download_bp = Blueprint("download", __name__)
 
@@ -154,6 +157,44 @@ def download_file_by_id(file_id):
     except Exception as e:
         current_app.logger.error(f"Download by ID error: {str(e)}")
         abort(500, "Download failed")
+
+
+@download_bp.route("/cleanup/<component>/<filename>", methods=["POST"])
+def cleanup_file(component, filename):
+    """Cleanup downloaded file after user has downloaded it"""
+    try:
+        import os
+
+        from werkzeug.utils import secure_filename
+
+        from ..utils.file_manager import get_file_manager
+
+        # Secure the filename
+        safe_filename = secure_filename(filename)
+
+        # Validate component
+        valid_components = ["compress", "merge", "normalize"]
+        if component not in valid_components:
+            return jsonify({"success": False, "error": "Invalid component"}), 400
+
+        # Get file manager for the component
+        file_manager = get_file_manager(component=component)
+        file_path = file_manager.get_download_path(safe_filename)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            logger.info(f"🧹 Cleaned up {component} file: {safe_filename}")
+            return (
+                jsonify({"success": True, "message": f"File {safe_filename} cleaned up", "component": component}),
+                200,
+            )
+        else:
+            logger.warning(f"⚠️ File not found for cleanup: {file_path}")
+            return jsonify({"success": False, "message": "File not found"}), 404
+
+    except Exception as e:
+        logger.error(f"❌ Cleanup error: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # Test route to verify the simple approach works

@@ -1,10 +1,9 @@
-// Compress page functionality - UPDATED
+// Compress page functionality - INTEGRATED PRESETS & SLIDERS
 class CompressManager {
     constructor() {
         this.files = [];
         this.initializeEventListeners();
         this.updateUI();
-        this.updateCompressionDetails();
     }
 
     initializeEventListeners() {
@@ -33,20 +32,30 @@ class CompressManager {
             this.handleFiles(e.dataTransfer.files);
         });
 
-        // Compression level
-        document.getElementById('compressionLevel').addEventListener('change', () => {
-            this.updateCompressionDetails();
-            this.updateAdvancedOptions();
+        // Compression presets
+        document.querySelectorAll('input[name="compressionLevel"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                this.applyPreset(radio.value);
+            });
         });
 
-        // Advanced options
-        document.getElementById('imageQuality').addEventListener('input', debounce(() => {
-            this.updateCompressionLevelFromAdvanced();
-        }, 500));
+        // Sliders - update display values and visual feedback
+        const qualitySlider = document.getElementById('imageQualitySlider');
+        const dpiSlider = document.getElementById('targetDPISlider');
 
-        document.getElementById('targetDPI').addEventListener('input', debounce(() => {
-            this.updateCompressionLevelFromAdvanced();
-        }, 500));
+        qualitySlider.addEventListener('input', (e) => {
+            document.getElementById('imageQualityValue').textContent = e.target.value;
+            this.updateSliderBackground(qualitySlider);
+        });
+
+        dpiSlider.addEventListener('input', (e) => {
+            document.getElementById('targetDPIValue').textContent = e.target.value;
+            this.updateSliderBackground(dpiSlider);
+        });
+
+        // Initialize slider backgrounds
+        this.updateSliderBackground(qualitySlider);
+        this.updateSliderBackground(dpiSlider);
 
         // Action buttons
         document.getElementById('compressButton').addEventListener('click', () => {
@@ -56,6 +65,37 @@ class CompressManager {
         document.getElementById('resetButton').addEventListener('click', () => {
             this.reset();
         });
+    }
+
+    applyPreset(level) {
+        const qualitySlider = document.getElementById('imageQualitySlider');
+        const dpiSlider = document.getElementById('targetDPISlider');
+
+        // Exact values matching backend
+        const presets = {
+            low: { quality: 95, dpi: 200 },
+            medium: { quality: 85, dpi: 150 },
+            high: { quality: 75, dpi: 120 }
+        };
+
+        if (presets[level]) {
+            qualitySlider.value = presets[level].quality;
+            dpiSlider.value = presets[level].dpi;
+
+            document.getElementById('imageQualityValue').textContent = presets[level].quality;
+            document.getElementById('targetDPIValue').textContent = presets[level].dpi;
+
+            this.updateSliderBackground(qualitySlider);
+            this.updateSliderBackground(dpiSlider);
+        }
+    }
+
+    updateSliderBackground(slider) {
+        const min = slider.min;
+        const max = slider.max;
+        const val = slider.value;
+        const percentage = ((val - min) / (max - min)) * 100;
+        slider.style.background = `linear-gradient(to right, #3498db 0%, #3498db ${percentage}%, #ddd ${percentage}%, #ddd 100%)`;
     }
 
     handleFiles(fileList) {
@@ -85,19 +125,13 @@ class CompressManager {
         this.updateUI();
     }
 
-    // UPDATED: Fixed cleanup function for compress component
     cleanupAfterDownload(filename) {
-        // Wait a bit then cleanup the file
         setTimeout(() => {
             fetch(`/cleanup/compress/${filename}`, {method: 'POST'})
                 .then(response => response.json())
-                .then(data => {
-                    console.log('Cleanup result:', data);
-                })
-                .catch(error => {
-                    console.error('Cleanup error:', error);
-                });
-        }, 5000); // Cleanup 5 seconds after download starts
+                .then(data => console.log('Cleanup result:', data))
+                .catch(error => console.error('Cleanup error:', error));
+        }, 5000);
     }
 
     async uploadFiles() {
@@ -151,7 +185,6 @@ class CompressManager {
 
             if (result.success) {
                 this.showResult(result);
-                // UPDATED: Add cleanup to download link
                 const downloadLink = document.getElementById('downloadLink');
                 downloadLink.onclick = () => this.cleanupAfterDownload(result.output_filename);
 
@@ -169,71 +202,16 @@ class CompressManager {
     }
 
     getOptions() {
+        const selectedLevel = document.querySelector('input[name="compressionLevel"]:checked').value;
+        const quality = parseInt(document.getElementById('imageQualitySlider').value);
+        const dpi = parseInt(document.getElementById('targetDPISlider').value);
+
         return {
-            compression_level: document.getElementById('compressionLevel').value,
-            // UPDATED: Match backend compression level settings exactly
-            image_quality: parseInt(document.getElementById('imageQuality').value) || 85, // Default to medium
-            target_dpi: parseInt(document.getElementById('targetDPI').value) || 150, // Default to medium
+            compression_level: selectedLevel,
+            image_quality: quality,
+            target_dpi: dpi,
             downsample_images: document.getElementById('downsampleImages').checked
         };
-    }
-
-    updateCompressionDetails() {
-        const level = document.getElementById('compressionLevel').value;
-        const details = document.getElementById('compressionDetails');
-
-        // Hide all info boxes
-        details.querySelectorAll('.compression-info').forEach(info => {
-            info.style.display = 'none';
-        });
-
-        // Show selected level info
-        const selectedInfo = details.querySelector(`[data-level="${level}"]`);
-        if (selectedInfo) {
-            selectedInfo.style.display = 'block';
-        }
-
-        // Update advanced options based on level
-        this.updateAdvancedOptions();
-    }
-
-    updateAdvancedOptions() {
-        const level = document.getElementById('compressionLevel').value;
-        const qualityInput = document.getElementById('imageQuality');
-        const dpiInput = document.getElementById('targetDPI');
-
-        // UPDATED: Match exact values from backend routes
-        const presets = {
-            low: {quality: 95, dpi: 200},      // Matches backend exactly
-            medium: {quality: 85, dpi: 150},   // Matches backend exactly
-            high: {quality: 75, dpi: 120}      // Matches backend exactly
-        };
-
-        if (presets[level]) {
-            qualityInput.value = presets[level].quality;
-            dpiInput.value = presets[level].dpi;
-        }
-    }
-
-    updateCompressionLevelFromAdvanced() {
-        const quality = parseInt(document.getElementById('imageQuality').value);
-        const dpi = parseInt(document.getElementById('targetDPI').value);
-
-        // Calculate a score based on both quality and DPI
-        const qualityScore = quality / 100;
-        const dpiScore = (dpi - 72) / (300 - 72); // Normalize DPI between 72-300
-        const overallScore = (qualityScore + dpiScore) / 2;
-
-        // Determine compression level based on overall score
-        let level = 'medium';
-        if (overallScore >= 0.8) { // High quality + high DPI
-            level = 'low';
-        } else if (overallScore <= 0.6) { // Low quality + low DPI
-            level = 'high';
-        }
-
-        document.getElementById('compressionLevel').value = level;
-        this.updateCompressionDetails();
     }
 
     showResult(result) {
@@ -247,42 +225,39 @@ class CompressManager {
                 <p>Successfully compressed ${result.successful} out of ${result.total_files} files</p>
                 <p>Total space saved: ${(result.total_savings_mb || 0).toFixed(2)} MB</p>
             `;
+            compressionStats.innerHTML = '';
         } else {
             const stats = result.compression_stats;
             const savedMB = (stats.original_size_mb - stats.compressed_size_mb).toFixed(2);
 
             resultInfo.innerHTML = `
-                <p>File compressed successfully!</p>
-                <p>Compression level: <strong>${stats.compression_level}</strong></p>
+                <p>✅ File compressed successfully!</p>
             `;
 
             compressionStats.innerHTML = `
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <div class="stat-value">${stats.original_size_mb.toFixed(2)}</div>
-                        <div class="stat-label">Original Size (MB)</div>
+                        <div class="stat-value">${stats.original_size_mb.toFixed(2)} MB</div>
+                        <div class="stat-label">Original Size</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">${stats.compressed_size_mb.toFixed(2)}</div>
-                        <div class="stat-label">Compressed Size (MB)</div>
+                        <div class="stat-value">${stats.compressed_size_mb.toFixed(2)} MB</div>
+                        <div class="stat-label">Compressed Size</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">${savedMB}</div>
-                        <div class="stat-label">Space Saved (MB)</div>
+                        <div class="stat-value">${savedMB} MB</div>
+                        <div class="stat-label">Space Saved</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-value">${stats.compression_ratio.toFixed(1)}%</div>
                         <div class="stat-label">Reduction</div>
                     </div>
                 </div>
-                ${!stats.used_compression ? '<p class="warning">Note: Original file was already optimized</p>' : ''}
             `;
         }
 
         downloadLink.href = result.download_url;
         downloadLink.textContent = `Download ${result.output_filename}`;
-
-        // Add cleanup handler
         downloadLink.onclick = () => this.cleanupAfterDownload(result.output_filename);
 
         resultSection.style.display = 'block';
@@ -293,7 +268,6 @@ class CompressManager {
         const fileList = document.getElementById('fileList');
         const compressButton = document.getElementById('compressButton');
 
-        // Update file list
         fileList.innerHTML = this.files.map(fileInfo => `
             <div class="file-item">
                 <div>
@@ -306,26 +280,20 @@ class CompressManager {
             </div>
         `).join('');
 
-        // Update button state and text
         compressButton.disabled = this.files.length === 0;
-
-        if (this.files.length === 0) {
-            compressButton.textContent = 'Compress PDF';
-        } else if (this.files.length === 1) {
-            compressButton.textContent = 'Compress PDF';
-        } else {
-            compressButton.textContent = `Compress ${this.files.length} PDFs`;
-        }
+        compressButton.textContent = this.files.length === 0 ? 'Compress PDF' :
+            this.files.length === 1 ? 'Compress PDF' : `Compress ${this.files.length} PDFs`;
     }
 
     reset() {
         this.files = [];
         document.getElementById('fileInput').value = '';
-        document.getElementById('compressionLevel').value = 'medium';
+        document.getElementById('presetMedium').checked = true;
         document.getElementById('downsampleImages').checked = true;
         document.getElementById('outputFilename').value = '';
         document.getElementById('resultSection').style.display = 'none';
-        this.updateCompressionDetails();
+
+        this.applyPreset('medium');
         this.updateUI();
         notifications.show('Form reset');
     }

@@ -1,115 +1,140 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="tool-page">
-    <h1>Compress PDFs</h1>
-    <p class="page-description">Reduce PDF file size while maintaining quality with smart compression algorithms.</p>
+    <div class="tool-page">
+        <h1>Compress PDFs</h1>
+        <p class="page-description">Reduce PDF file size while maintaining quality with smart compression
+            algorithms.</p>
 
-    <div class="tool-interface">
-        <div class="upload-section">
-            <h3>Upload PDF Files</h3>
-            <div class="upload-area" id="uploadArea">
-                <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
-                <div class="upload-placeholder">
-                    <p>Drag & drop PDF files here or click to browse</p>
-                    <p class="upload-hint">Single file or batch processing supported</p>
+        <div class="tool-interface">
+            <div class="upload-section">
+                <h3>Upload PDF Files</h3>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
+                    <div class="upload-placeholder">
+                        <p>Drag & drop PDF files here or click to browse</p>
+                        <p class="upload-hint">Single file or batch processing supported</p>
+                    </div>
+                    <button type="button" class="btn btn-secondary"
+                            onclick="document.getElementById('fileInput').click()">
+                        Select Files
+                    </button>
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
-                    Select Files
+                <div id="fileList" class="file-list"></div>
+            </div>
+
+            <div class="options-section">
+                <h3>Compression Settings</h3>
+
+                <div class="option-group">
+                    <label>Compression Preset:</label>
+                    <div class="compression-presets">
+                        <label class="preset-option">
+                            <input type="radio" name="compressionLevel" value="low" id="presetLow">
+                            <div class="preset-card">
+                                <div class="preset-title">🎨 Low Compression</div>
+                                <div class="preset-subtitle">Best Quality</div>
+                                <div class="preset-values">
+                                    <span>Quality: 95%</span>
+                                    <span>DPI: 200</span>
+                                </div>
+                                <div class="preset-desc">For documents with important images</div>
+                            </div>
+                        </label>
+
+                        <label class="preset-option">
+                            <input type="radio" name="compressionLevel" value="medium" id="presetMedium" checked>
+                            <div class="preset-card">
+                                <div class="preset-title">⚖️ Medium Compression</div>
+                                <div class="preset-subtitle">Balanced</div>
+                                <div class="preset-values">
+                                    <span>Quality: 85%</span>
+                                    <span>DPI: 150</span>
+                                </div>
+                                <div class="preset-desc">Recommended for general use</div>
+                            </div>
+                        </label>
+
+                        <label class="preset-option">
+                            <input type="radio" name="compressionLevel" value="high" id="presetHigh">
+                            <div class="preset-card">
+                                <div class="preset-title">🗜️ High Compression</div>
+                                <div class="preset-subtitle">Smallest Size</div>
+                                <div class="preset-values">
+                                    <span>Quality: 75%</span>
+                                    <span>DPI: 120</span>
+                                </div>
+                                <div class="preset-desc">For web & email attachments</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="option-group fine-tune-section">
+                    <h4>🎚️ Fine-Tune Settings</h4>
+                    <p class="option-description">Adjust values manually or use presets above</p>
+
+                    <div class="slider-group">
+                        <label for="imageQualitySlider">
+                            Image Quality: <span id="imageQualityValue" class="value-badge">85</span>%
+                        </label>
+                        <input type="range" id="imageQualitySlider" min="50" max="100" value="85" step="5"
+                               class="slider">
+                        <div class="slider-labels">
+                            <span>50%</span>
+                            <span>75%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+
+                    <div class="slider-group">
+                        <label for="targetDPISlider">
+                            Target DPI: <span id="targetDPIValue" class="value-badge">150</span>
+                        </label>
+                        <input type="range" id="targetDPISlider" min="72" max="300" value="150" step="6" class="slider">
+                        <div class="slider-labels">
+                            <span>72</span>
+                            <span>150</span>
+                            <span>300</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label">
+                        <input type="checkbox" id="downsampleImages" name="downsampleImages" checked>
+                        Downsample Large Images
+                    </label>
+                    <p class="option-description">Reduce resolution of high-DPI images to target DPI</p>
+                </div>
+
+                <div class="form-row">
+                    <label>Output Filename (optional):</label>
+                    <input type="text" id="outputFilename" placeholder="Leave blank for auto-naming" class="form-input">
+                </div>
+            </div>
+
+            <div class="action-section">
+                <button id="compressButton" class="btn btn-primary btn-large" disabled>
+                    Compress PDF(s)
+                </button>
+                <button id="resetButton" class="btn btn-secondary">
+                    Reset
                 </button>
             </div>
-            <div id="fileList" class="file-list"></div>
-        </div>
 
-        <div class="options-section">
-            <h3>Compression Options</h3>
-
-            <div class="option-group">
-                <div class="form-row">
-                    <label>Compression Level:</label>
-                    <select id="compressionLevel" class="form-select">
-                        <option value="low">Low Compression (Best Quality)</option>
-                        <option value="medium" selected>Medium Compression (Recommended)</option>
-                        <option value="high">High Compression (Smallest Size)</option>
-                    </select>
-                </div>
-
-                <div id="compressionDetails">
-                    <div class="compression-info" data-level="low">
-                        <p><strong>Best Quality</strong> - Minimal compression, preserves all details</p>
-                        <ul>
-                            <li>Image Quality: 85-95%</li>
-                            <li>Target DPI: 200</li>
-                            <li>Recommended for: Documents with important images</li>
-                        </ul>
-                    </div>
-                    <div class="compression-info" data-level="medium" style="display: block;">
-                        <p><strong>Balanced</strong> - Good compression with quality preservation</p>
-                        <ul>
-                            <li>Image Quality: 65-85%</li>
-                            <li>Target DPI: 150</li>
-                            <li>Recommended for: General documents</li>
-                        </ul>
-                    </div>
-                    <div class="compression-info" data-level="high">
-                        <p><strong>Maximum Compression</strong> - Smallest file size</p>
-                        <ul>
-                            <li>Image Quality: 50-75%</li>
-                            <li>Target DPI: 120</li>
-                            <li>Recommended for: Web publishing, email attachments</li>
-                        </ul>
-                    </div>
-                </div>
+            <div id="resultSection" class="result-section" style="display: none;">
+                <h3>Compression Complete!</h3>
+                <div id="resultInfo"></div>
+                <div id="compressionStats"></div>
+                <a id="downloadLink" class="btn btn-success" download>
+                    Download Compressed PDF
+                </a>
             </div>
-
-            <div class="option-group">
-                <label class="option-label">
-                    <input type="checkbox" id="downsampleImages" name="downsampleImages" checked>
-                    Downsample Large Images
-                </label>
-                <p class="option-description">Reduce resolution of high-DPI images to save space</p>
-            </div>
-
-            <div class="option-group advanced-options">
-                <h4>Advanced Options</h4>
-                <div class="form-row">
-                    <label>Image Quality (%):</label>
-                    <input type="number" id="imageQuality" value="75" min="1" max="100" class="form-input">
-                </div>
-                <div class="form-row">
-                    <label>Target DPI:</label>
-                    <input type="number" id="targetDPI" value="150" min="72" max="600" class="form-input">
-                </div>
-                <p class="option-description">These settings adjust automatically based on compression level</p>
-            </div>
-
-            <div class="form-row">
-                <label>Output Filename (single file):</label>
-                <input type="text" id="outputFilename" placeholder="compressed.pdf" class="form-input">
-            </div>
-        </div>
-
-        <div class="action-section">
-            <button id="compressButton" class="btn btn-primary btn-large" disabled>
-                Compress PDF(s)
-            </button>
-            <button id="resetButton" class="btn btn-secondary">
-                Reset
-            </button>
-        </div>
-
-        <div id="resultSection" class="result-section" style="display: none;">
-            <h3>Compression Complete!</h3>
-            <div id="resultInfo"></div>
-            <div id="compressionStats"></div>
-            <a id="downloadLink" class="btn btn-success" download>
-                Download Compressed PDF
-            </a>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/compress.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/compress.js') }}"></script>
 {% endblock %}
