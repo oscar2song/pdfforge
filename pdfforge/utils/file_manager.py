@@ -1,9 +1,6 @@
 # pdfforge/utils/file_manager.py
 import os
-import platform
 from pathlib import Path
-import tempfile
-import shutil
 from typing import Optional
 
 
@@ -16,11 +13,13 @@ class FilePathManager:
         # Priority: Custom dir > Environment variable > Default location (existing behavior)
         if base_data_dir:
             self.base_data_dir = Path(base_data_dir)
-        elif os.getenv('PDF_APP_DATA_DIR'):
-            self.base_data_dir = Path(os.getenv('PDF_APP_DATA_DIR'))
         else:
-            # DEFAULT: Use existing project structure (uploads/, downloads/)
-            self.base_data_dir = Path(__file__).parent.parent.parent  # Project root
+            env_dir = os.getenv("PDF_APP_DATA_DIR")
+            if env_dir:
+                self.base_data_dir = Path(env_dir)
+            else:
+                # DEFAULT: Use existing project structure (uploads/, downloads/)
+                self.base_data_dir = Path(__file__).parent.parent.parent  # Project root
 
         self.component = component
         self.ensure_directories()
@@ -87,6 +86,7 @@ class FilePathManager:
     def generate_output_filename(self, original_name: str, operation: str, suffix: str = "") -> str:
         """Generate consistent output filenames across all components"""
         from datetime import datetime
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         name_without_ext = Path(original_name).stem
@@ -106,12 +106,13 @@ class FilePathManager:
         """Clean up old files for this specific component"""
         try:
             import time
+
             current_time = time.time()
             max_age_seconds = max_age_hours * 3600
 
             component_dir = self.get_component_dir()
             if component_dir.exists():
-                for file_path in component_dir.glob('*'):
+                for file_path in component_dir.glob("*"):
                     if file_path.is_file():
                         file_age = current_time - file_path.stat().st_mtime
                         if file_age > max_age_seconds:

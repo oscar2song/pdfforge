@@ -49,11 +49,13 @@ def upload_file():
         # Save file using file_utils (which now uses file manager)
         file_path = save_uploaded_file(file)  # No upload_folder needed
 
-        return jsonify({
-            "success": True,
-            "file_path": file_path,
-            "filename": secure_filename(file.filename),
-        })
+        return jsonify(
+            {
+                "success": True,
+                "file_path": file_path,
+                "filename": secure_filename(file.filename),
+            }
+        )
 
     except Exception as e:
         logger.exception("Upload error in merge")
@@ -127,11 +129,7 @@ def download_merged(file_id):
             return jsonify({"success": False, "error": f"File not found: {file_id}"}), 404
 
         logger.info(f"Serving file from: {file_path}")
-        return send_file(
-            str(file_path),
-            as_attachment=True,
-            download_name=file_path.name
-        )
+        return send_file(str(file_path), as_attachment=True, download_name=file_path.name)
 
     except Exception as e:
         logger.error(f"Download error: {e}")
@@ -162,11 +160,9 @@ def cleanup_file(file_id):
                     files_cleaned += 1
                     logger.info(f"Cleaned up from old uploads: {file_path}")
 
-        return jsonify({
-            "success": True,
-            "message": f"Cleaned up {files_cleaned} files",
-            "files_cleaned": files_cleaned
-        })
+        return jsonify(
+            {"success": True, "message": f"Cleaned up {files_cleaned} files", "files_cleaned": files_cleaned}
+        )
 
     except Exception as e:
         logger.error(f"Cleanup error: {e}")

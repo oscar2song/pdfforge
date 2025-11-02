@@ -4,17 +4,17 @@ Normalize Service - Business Logic Layer - UPDATED with File Manager
 """
 
 import logging
-from typing import Any, Dict, List
 from pathlib import Path
+from typing import Any, Dict, List
 
 from ..core.normalize import PDFNormalizer
 from ..exceptions.pdf_exceptions import PDFNormalizationError
 from ..exceptions.validation_exceptions import ValidationError
 from ..models.normalize_options import NormalizeOptions
 from ..models.pdf_file import PDFFile
+from ..utils.file_manager import get_file_manager
 from ..utils.file_utils import cleanup_temp_files, save_pdf
 from ..utils.validation import validate_pdf_files
-from ..utils.file_manager import get_file_manager
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,7 @@ class NormalizeService:
         self.normalizer = None
         self.file_manager = get_file_manager("normalize")
 
-    def normalize_file(
-            self, file_config: Dict[str, Any], options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def normalize_file(self, file_config: Dict[str, Any], options: Dict[str, Any]) -> Dict[str, Any]:
         """
         Normalize a single PDF file
         """
@@ -45,12 +43,11 @@ class NormalizeService:
             normalized_doc = self.normalizer.normalize(pdf_file)
 
             # Generate output filename using file manager
-            output_filename = self.file_manager.generate_output_filename(
-                pdf_file.name, "normalized"
-            )
+            output_filename = self.file_manager.generate_output_filename(pdf_file.name, "normalized")
 
             # Convert Document to bytes and save
             import io
+
             pdf_bytes = io.BytesIO()
             normalized_doc.save(pdf_bytes)
             normalized_doc.close()
@@ -67,10 +64,7 @@ class NormalizeService:
                 "filename": output_filename,
                 "file_id": Path(output_path).stem,  # Add file ID for new download system
                 "page_count": pdf_file.page_count,
-                "target_size": (
-                    f"{normalize_options.page_size} "
-                    f"{normalize_options.orientation}"
-                ),
+                "target_size": (f"{normalize_options.page_size} " f"{normalize_options.orientation}"),
                 "ocr_performed": normalize_options.add_ocr,
             }
 
@@ -91,9 +85,7 @@ class NormalizeService:
             }
 
         except Exception as e:
-            logger.exception(
-                f"Unexpected error during normalization:{str(e)}"
-            )
+            logger.exception(f"Unexpected error during normalization:{str(e)}")
             return {
                 "success": False,
                 "error": "An unexpected error occurred during normalization",
@@ -104,16 +96,12 @@ class NormalizeService:
             if "file_config" in locals():
                 cleanup_temp_files([file_config["path"]])
 
-    def normalize_batch(
-            self, file_configs: List[Dict[str, Any]], options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def normalize_batch(self, file_configs: List[Dict[str, Any]], options: Dict[str, Any]) -> Dict[str, Any]:
         """
         Normalize multiple PDF files and create zip archive
         """
         try:
-            logger.info(
-                f"Starting batch normalization for {len(file_configs)} files"
-            )
+            logger.info(f"Starting batch normalization for {len(file_configs)} files")
 
             normalized_files = []
             results = []
@@ -132,6 +120,7 @@ class NormalizeService:
             # Create zip archive if multiple files
             if len(normalized_files) > 1:
                 import datetime
+
                 from ..utils.file_utils import create_zip_archive
 
                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -171,9 +160,7 @@ class NormalizeService:
                 "error_type": "internal",
             }
 
-    def _validate_and_prepare_file(
-            self, file_config: Dict[str, Any]
-    ) -> PDFFile:
+    def _validate_and_prepare_file(self, file_config: Dict[str, Any]) -> PDFFile:
         """Validate and convert file config to PDFFile object"""
         validate_pdf_files([file_config])
         pdf_file = PDFFile.from_dict(file_config)

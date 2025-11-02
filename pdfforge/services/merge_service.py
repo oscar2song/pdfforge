@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 from ..core.merge import PDFMerger
 from ..models.merge_options import MergeOptions
 from ..models.pdf_file import PDFFile
-from ..utils.file_manager import get_file_manager
+from ..utils.file_manager import FilePathManager, get_file_manager
 from ..utils.file_utils import cleanup_temp_files
 
 logger = logging.getLogger(__name__)
@@ -19,18 +19,16 @@ logger = logging.getLogger(__name__)
 class MergeService:
     """High-level merge service with business logic"""
 
-    def __init__(self, upload_folder=None):
+    def __init__(self, upload_folder: str | None = None) -> None:
         """Initialize merge service with file manager"""
-        self.file_manager = get_file_manager("merge")
+        self.file_manager: FilePathManager = get_file_manager("merge")
 
         # For backward compatibility - use file manager's upload directory
         self.upload_folder = self.file_manager.uploads_dir
 
         logger.info(f"MergeService initialized with upload folder: {self.upload_folder}")
 
-    def merge_files(
-            self, file_configs: List[Dict[str, Any]], options: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def merge_files(self, file_configs: List[Dict[str, Any]], options: Dict[str, Any]) -> Dict[str, Any]:
         """
         Merge multiple PDF files into a single PDF
         """
@@ -69,7 +67,7 @@ class MergeService:
 
             # Log TOC creation if enabled
             if merge_options.add_toc:
-                logger.info(f"Table of Contents created in merged PDF")
+                logger.info("Table of Contents created in merged PDF")
 
             logger.info(f"Merge completed: {output_filename} with {page_count} pages")
             logger.info(f"File saved to: {final_output_path}")
@@ -96,12 +94,13 @@ class MergeService:
             if merged_doc:
                 try:
                     merged_doc.close()
-                except:
+                except (AttributeError, OSError, ValueError):
                     pass
 
             # Cleanup source files
             if "file_configs" in locals():
-                source_paths = [fc.get("path") for fc in file_configs if fc.get("path")]
+                # Filter out None values explicitly for type checking
+                source_paths = [path for fc in file_configs if (path := fc.get("path")) is not None]
                 cleanup_temp_files(source_paths)
 
     def _generate_output_filename(self, pdf_files: List[PDFFile], options: MergeOptions) -> str:

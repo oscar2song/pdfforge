@@ -1,14 +1,16 @@
 """
 PDF File Data Model
 """
+
 import logging
+import os
 from dataclasses import dataclass
 from typing import Any, Dict
-import os
 
 from pdfforge.exceptions.pdf_exceptions import PDFAnalysisError
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class PDFFile:
@@ -31,7 +33,7 @@ class PDFFile:
             path=data.get("path", ""),
             name=data.get("name", ""),
             header_line1=data.get("header_line1", ""),
-            header_line2=data.get("header_line2", "")
+            header_line2=data.get("header_line2", ""),
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -40,7 +42,7 @@ class PDFFile:
             "path": self.path,
             "name": self.name,
             "header_line1": self.header_line1,
-            "header_line2": self.header_line2
+            "header_line2": self.header_line2,
         }
 
     @property
@@ -52,6 +54,7 @@ class PDFFile:
         """Analyze PDF properties"""
         try:
             import fitz  # PyMuPDF
+
             doc = fitz.open(self.path)
             self.page_count = len(doc)
             self.original_size = os.path.getsize(self.path)
@@ -61,12 +64,11 @@ class PDFFile:
             for page_num in range(self.page_count):
                 page = doc[page_num]
                 rect = page.rect
-                self.page_sizes.append({
-                    'width': rect.width,
-                    'height': rect.height
-                })
+                self.page_sizes.append({"width": rect.width, "height": rect.height})
 
             doc.close()
+
+            return self  # ← ADD THIS LINE
 
         except Exception as e:
             logging.error(f"Error analyzing PDF {self.path}: {str(e)}")

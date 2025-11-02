@@ -4,7 +4,7 @@ Compress Routes - HTTP Request Handlers
 
 import logging
 
-from flask import Blueprint, current_app, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request
 from werkzeug.utils import secure_filename
 
 from ..services.compress_service import CompressService
@@ -196,6 +196,7 @@ def compress_pdf():
             ),
             500,
         )
+
 
 @compress_bp.route("/compression-levels", methods=["GET"])
 def get_compression_levels():

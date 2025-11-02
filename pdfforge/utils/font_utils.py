@@ -1,15 +1,16 @@
 # pdfforge/utils/font_utils.py
 import os
+from typing import Any, Dict
+
 import fitz
-from typing import Optional, Dict, Any
 
 
 class ProjectFontManager:
     """Fixed font manager for PyMuPDF 1.26.5 using correct font handling"""
 
     _fonts_loaded = False
-    _available_fonts = {}
-    _font_cache = {}  # Cache font objects
+    _available_fonts: Dict[str, str] = {}
+    _font_cache: Dict[str, Any] = {}  # Cache font objects
 
     @classmethod
     def get_fonts_directory(cls) -> str:
@@ -33,16 +34,16 @@ class ProjectFontManager:
 
             if not os.path.exists(fonts_dir):
                 print("⚠ Fonts directory not found")
-                cls._available_fonts['default'] = "helv"
+                cls._available_fonts["default"] = "helv"
                 cls._fonts_loaded = True
                 return False
 
             # Check OpenSans availability
             open_sans_files = {
-                'regular': "OpenSans-Regular.ttf",
-                'bold': "OpenSans-Bold.ttf",
-                'italic': "OpenSans-Italic.ttf",
-                'bold_italic': "OpenSans-BoldItalic.ttf",
+                "regular": "OpenSans-Regular.ttf",
+                "bold": "OpenSans-Bold.ttf",
+                "italic": "OpenSans-Italic.ttf",
+                "bold_italic": "OpenSans-BoldItalic.ttf",
             }
 
             open_sans_available = True
@@ -58,30 +59,30 @@ class ProjectFontManager:
 
                 # Store font paths
                 for variant, filename in open_sans_files.items():
-                    cls._available_fonts[f'path-{variant}'] = os.path.join(fonts_dir, "OpenSans", filename)
+                    cls._available_fonts[f"path-{variant}"] = os.path.join(fonts_dir, "OpenSans", filename)
 
-                cls._available_fonts['default'] = "opensans"
+                cls._available_fonts["default"] = "opensans"
                 print("🎉 Using OpenSans fonts")
             else:
                 print("⚠ Using system fonts")
-                cls._available_fonts['default'] = "helv"
+                cls._available_fonts["default"] = "helv"
 
             cls._fonts_loaded = True
             return True
 
         except Exception as e:
             print(f"⚠ Font initialization failed: {e}")
-            cls._available_fonts['default'] = "helv"
+            cls._available_fonts["default"] = "helv"
             cls._fonts_loaded = True
             return False
 
     @classmethod
-    def insert_text_with_font(cls, page, pos, text, fontsize=11, variant='regular', **kwargs):
+    def insert_text_with_font(cls, page, pos, text, fontsize=11, variant="regular", **kwargs):
         """Insert text with custom font - use fontfile parameter directly"""
-        if cls._available_fonts['default'] == "helv":
+        if cls._available_fonts["default"] == "helv":
             return page.insert_text(pos, text, fontsize=fontsize, fontname="helv", **kwargs)
 
-        font_path = cls._available_fonts.get(f'path-{variant}')
+        font_path = cls._available_fonts.get(f"path-{variant}")
 
         if font_path and os.path.exists(font_path):
             try:
@@ -95,9 +96,9 @@ class ProjectFontManager:
             return page.insert_text(pos, text, fontsize=fontsize, fontname="helv", **kwargs)
 
     @classmethod
-    def get_text_length(cls, text, fontsize=11, variant='regular'):
+    def get_text_length(cls, text, fontsize=11, variant="regular"):
         """Get text length by inserting and measuring"""
-        if cls._available_fonts['default'] == "helv":
+        if cls._available_fonts["default"] == "helv":
             return fitz.get_text_length(text, fontsize=fontsize, fontname="helv")
 
         # For custom fonts, create a temporary page to measure
@@ -111,9 +112,9 @@ class ProjectFontManager:
             doc.close()
 
             # Return the width of the bounding rectangle
-            if hasattr(rect, 'width'):
+            if hasattr(rect, "width"):
                 return rect.width
-            elif hasattr(rect, 'x1') and hasattr(rect, 'x0'):
+            elif hasattr(rect, "x1") and hasattr(rect, "x0"):
                 return rect.x1 - rect.x0
             else:
                 # Fallback estimation
@@ -125,7 +126,7 @@ class ProjectFontManager:
 
     @classmethod
     def get_default_font(cls):
-        return cls._available_fonts.get('default', 'helv')
+        return cls._available_fonts.get("default", "helv")
 
     @classmethod
     def reset(cls):

@@ -2,8 +2,10 @@
 PDF Utility Functions
 """
 
+from typing import Any, Dict
+
 import fitz  # type: ignore
-from typing import Dict, Any, Optional
+
 from ..exceptions.pdf_exceptions import PDFValidationError
 
 
@@ -62,7 +64,7 @@ def analyze_pdf(file_path: str) -> Dict[str, Any]:
                 "page_height": page_height,
                 "orientation": orientation,
                 "size_category": size_category,
-                "is_valid": True
+                "is_valid": True,
             }
 
     except Exception as e:
@@ -73,7 +75,7 @@ def analyze_pdf(file_path: str) -> Dict[str, Any]:
             "orientation": "unknown",
             "size_category": "unknown",
             "is_valid": False,
-            "error": str(e)
+            "error": str(e),
         }
 
 
@@ -117,60 +119,28 @@ def get_pdf_metadata(file_path: str) -> Dict[str, Any]:
                 "producer": metadata.get("producer", ""),
                 "creation_date": metadata.get("creationDate", ""),
                 "modification_date": metadata.get("modDate", ""),
-                "page_count": len(doc)
+                "page_count": len(doc),
             }
     except Exception as e:
         return {"error": str(e)}
 
 
-def has_text_layer(file_path: str) -> bool:
-    """
-    Check if PDF has a text layer (not just scanned images)
-    """
-    try:
-        with fitz.open(file_path) as doc:
-            for page_num in range(min(3, len(doc))):  # Check first 3 pages
-                page = doc[page_num]
-                text = page.get_text()
-                if text.strip():  # If page has any text
-                    return True
-            return False
-    except Exception:
-        return False
+def has_text_layer(page):
+    """Check if page has extractable text"""
+    text = page.get_text().strip()
+    return len(text) > 10  # ← Adjust threshold or check logic
 
 
-def detect_pdf_type(page: fitz.Page) -> Dict[str, Any]:
-    """
-    Detect the type of PDF content on a page
-    """
-    try:
-        # Get text content
-        text = page.get_text()
-        has_text = bool(text.strip())
+def detect_pdf_type(page):
+    """Detect if PDF page is image-based or text-based"""
+    text = page.get_text().strip()
+    images = page.get_images()
 
-        # Get images
-        image_list = page.get_images()
-        has_images = len(image_list) > 0
-
-        # Analyze content
-        if has_text and not has_images:
-            pdf_type = "text"
-        elif has_images and not has_text:
-            pdf_type = "image"
-        elif has_text and has_images:
-            pdf_type = "mixed"
-        else:
-            pdf_type = "unknown"
-
-        return {
-            "type": pdf_type,
-            "has_text": has_text,
-            "has_images": has_images,
-            "text_length": len(text),
-            "image_count": len(image_list)
-        }
-    except Exception as e:
-        return {
-            "type": "error",
-            "error": str(e)
-        }
+    return {
+        "has_text": len(text) > 0,
+        "has_images": len(images) > 0,
+        "text_length": len(text),
+        "image_count": len(images),
+        "is_image_based": len(images) > 0 and len(text) < 50,  # ← ADD THIS FIELD
+        "type": "image" if (len(images) > 0 and len(text) < 50) else "text",
+    }

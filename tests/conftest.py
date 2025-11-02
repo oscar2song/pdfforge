@@ -64,9 +64,15 @@ def sample_pdf():
 
     yield temp_path
 
-    # Cleanup
+    # Cleanup - add delay and error handling for Windows
+    import time
+
     if Path(temp_path).exists():
-        Path(temp_path).unlink()
+        try:
+            time.sleep(0.1)  # Small delay to ensure file handle is released
+            Path(temp_path).unlink()
+        except PermissionError:
+            pass  # Ignore permission errors on Windows
 
 
 @pytest.fixture

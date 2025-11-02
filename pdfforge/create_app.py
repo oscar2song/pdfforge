@@ -62,10 +62,10 @@ def init_extensions(app):
 def register_blueprints(app):
     """Register Flask blueprints"""
     from .routes.compress import compress_bp
+    from .routes.download import download_bp  # Add this import
     from .routes.main import main_bp
     from .routes.merge import merge_bp
     from .routes.normalize import normalize_bp
-    from .routes.download import download_bp  # Add this import
 
     app.register_blueprint(main_bp)
     app.register_blueprint(merge_bp)

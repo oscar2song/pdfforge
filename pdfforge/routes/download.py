@@ -5,11 +5,12 @@ Download Routes - UPDATED with File Manager
 
 import os
 from pathlib import Path
-from flask import Blueprint, send_file, current_app, abort, jsonify
+
+from flask import Blueprint, abort, current_app, jsonify, send_file
 
 from ..utils.file_manager import get_file_manager
 
-download_bp = Blueprint('download', __name__)
+download_bp = Blueprint("download", __name__)
 
 
 def find_file_anywhere(filename: str):
@@ -20,12 +21,12 @@ def find_file_anywhere(filename: str):
     3. Old uploads directory
     """
     # Security check - prevent directory traversal
-    if '..' in filename or filename.startswith('/'):
+    if ".." in filename or filename.startswith("/"):
         current_app.logger.error("Security check failed")
         return None
 
     # Try component-specific directories first
-    components = ['merge', 'normalize', 'compress']
+    components = ["merge", "normalize", "compress"]
     for component in components:
         file_manager = get_file_manager(component)
         component_dir = file_manager.get_component_dir()
@@ -35,14 +36,14 @@ def find_file_anywhere(filename: str):
             return file_path
 
     # Fallback 1: Old downloads directory
-    old_downloads = Path(os.getcwd()) / 'downloads'
+    old_downloads = Path(os.getcwd()) / "downloads"
     file_path = old_downloads / filename
     if file_path.exists():
         current_app.logger.info(f"✅ Found file in old downloads directory: {file_path}")
         return file_path
 
     # Fallback 2: Old uploads directory
-    old_uploads = Path(os.getcwd()) / 'uploads'
+    old_uploads = Path(os.getcwd()) / "uploads"
     file_path = old_uploads / filename
     if file_path.exists():
         current_app.logger.info(f"✅ Found file in old uploads directory: {file_path}")
@@ -51,7 +52,7 @@ def find_file_anywhere(filename: str):
     return None
 
 
-def find_file_by_id(file_id: str, component: str = None):
+def find_file_by_id(file_id: str, component: str | None = None):
     """
     Find file by ID (partial filename match) in all locations
     """
@@ -65,7 +66,7 @@ def find_file_by_id(file_id: str, component: str = None):
                 return file_path
     else:
         # Search all component directories
-        components = ['merge', 'normalize', 'compress']
+        components = ["merge", "normalize", "compress"]
         for comp in components:
             file_manager = get_file_manager(comp)
             component_dir = file_manager.get_component_dir()
@@ -75,7 +76,7 @@ def find_file_by_id(file_id: str, component: str = None):
                     return file_path
 
     # Fallback: Search old directories
-    old_directories = [Path(os.getcwd()) / 'downloads', Path(os.getcwd()) / 'uploads']
+    old_directories = [Path(os.getcwd()) / "downloads", Path(os.getcwd()) / "uploads"]
     for directory in old_directories:
         if directory.exists():
             for file_path in directory.glob(f"*{file_id}*"):
@@ -86,7 +87,7 @@ def find_file_by_id(file_id: str, component: str = None):
     return None
 
 
-@download_bp.route('/download/<filename>')
+@download_bp.route("/download/<filename>")
 def download_file(filename):
     """Download a processed file - UPDATED with file manager"""
     current_app.logger.info("🎯 MAIN DOWNLOAD ROUTE EXECUTING!")
@@ -102,24 +103,20 @@ def download_file(filename):
         current_app.logger.info(f"✅ File found, sending: {file_path}")
 
         # Send file
-        return send_file(
-            str(file_path),
-            as_attachment=True,
-            download_name=filename
-        )
+        return send_file(str(file_path), as_attachment=True, download_name=filename)
 
     except Exception as e:
         current_app.logger.error(f"Download error: {str(e)}")
         abort(500, "Download failed")
 
 
-@download_bp.route('/download/component/<component>/<file_id>')
+@download_bp.route("/download/component/<component>/<file_id>")
 def download_component_file(component, file_id):
     """Download file from specific component directory"""
     current_app.logger.info(f"🎯 COMPONENT DOWNLOAD: {component}/{file_id}")
 
     try:
-        valid_components = ['merge', 'normalize', 'compress']
+        valid_components = ["merge", "normalize", "compress"]
         if component not in valid_components:
             abort(400, f"Invalid component. Must be one of: {', '.join(valid_components)}")
 
@@ -131,18 +128,14 @@ def download_component_file(component, file_id):
 
         current_app.logger.info(f"✅ Component file found, sending: {file_path}")
 
-        return send_file(
-            str(file_path),
-            as_attachment=True,
-            download_name=file_path.name
-        )
+        return send_file(str(file_path), as_attachment=True, download_name=file_path.name)
 
     except Exception as e:
         current_app.logger.error(f"Component download error: {str(e)}")
         abort(500, "Download failed")
 
 
-@download_bp.route('/download/id/<file_id>')
+@download_bp.route("/download/id/<file_id>")
 def download_file_by_id(file_id):
     """Download file by ID (searches all locations)"""
     current_app.logger.info(f"🎯 DOWNLOAD BY ID: {file_id}")
@@ -156,11 +149,7 @@ def download_file_by_id(file_id):
 
         current_app.logger.info(f"✅ File found by ID, sending: {file_path}")
 
-        return send_file(
-            str(file_path),
-            as_attachment=True,
-            download_name=file_path.name
-        )
+        return send_file(str(file_path), as_attachment=True, download_name=file_path.name)
 
     except Exception as e:
         current_app.logger.error(f"Download by ID error: {str(e)}")
@@ -168,7 +157,7 @@ def download_file_by_id(file_id):
 
 
 # Test route to verify the simple approach works
-@download_bp.route('/test-simple/<filename>')
+@download_bp.route("/test-simple/<filename>")
 def test_simple_download(filename):
     """Test the simple download approach"""
     try:
@@ -186,59 +175,44 @@ def test_simple_download(filename):
         return f"Error: {str(e)}", 500
 
 
-@download_bp.route('/debug/current-state')
+@download_bp.route("/debug/current-state")
 def debug_current_state():
     """Get the current state of all download locations"""
-    result = {
-        'current_working_directory': os.getcwd(),
-        'file_manager_locations': {},
-        'old_locations': {}
-    }
+    result = {"current_working_directory": os.getcwd(), "file_manager_locations": {}, "old_locations": {}}
 
     # Check file manager locations
-    components = ['merge', 'normalize', 'compress']
+    components = ["merge", "normalize", "compress"]
     for component in components:
         file_manager = get_file_manager(component)
         component_dir = file_manager.get_component_dir()
-        result['file_manager_locations'][component] = {
-            'path': str(component_dir),
-            'exists': component_dir.exists(),
-            'files': []
+        result["file_manager_locations"][component] = {
+            "path": str(component_dir),
+            "exists": component_dir.exists(),
+            "files": [],
         }
 
         if component_dir.exists():
-            files = list(component_dir.glob('*'))
-            result['file_manager_locations'][component]['files'] = [f.name for f in files if f.is_file()]
+            files = list(component_dir.glob("*"))
+            result["file_manager_locations"][component]["files"] = [f.name for f in files if f.is_file()]
 
     # Check old locations
-    old_locations = {
-        'downloads': Path(os.getcwd()) / 'downloads',
-        'uploads': Path(os.getcwd()) / 'uploads'
-    }
+    old_locations = {"downloads": Path(os.getcwd()) / "downloads", "uploads": Path(os.getcwd()) / "uploads"}
 
     for name, path in old_locations.items():
-        result['old_locations'][name] = {
-            'path': str(path),
-            'exists': path.exists(),
-            'files': []
-        }
+        result["old_locations"][name] = {"path": str(path), "exists": path.exists(), "files": []}
 
         if path.exists():
-            files = list(path.glob('*'))
-            result['old_locations'][name]['files'] = [f.name for f in files if f.is_file()]
+            files = list(path.glob("*"))
+            result["old_locations"][name]["files"] = [f.name for f in files if f.is_file()]
 
     return jsonify(result)
 
 
-@download_bp.route('/debug/routes')
+@download_bp.route("/debug/routes")
 def debug_routes():
     """Show all registered routes"""
-    import flask
+
     routes = []
     for rule in current_app.url_map.iter_rules():
-        routes.append({
-            'endpoint': rule.endpoint,
-            'methods': list(rule.methods),
-            'path': str(rule)
-        })
+        routes.append({"endpoint": rule.endpoint, "methods": list(rule.methods), "path": str(rule)})
     return jsonify(routes)

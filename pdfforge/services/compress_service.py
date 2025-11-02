@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class CompressService:
     """Core PDF compression functionality"""
 
-    def __init__(self, options: CompressionOptions = None):
+    def __init__(self, options: CompressionOptions | None = None):
         self.options = options or CompressionOptions()
         self.file_manager = get_file_manager(component="compress")
 
@@ -44,7 +44,7 @@ class CompressService:
             return {
                 "success": True,
                 "filename": compressed_name,
-                "output_path": output_path,
+                "file_path": output_path,  # ← Change from "output_path" to "file_path"
                 "original_size": stats["original_size"],
                 "compressed_size": stats["compressed_size"],
                 "compression_ratio": stats["compression_ratio"],
@@ -53,7 +53,7 @@ class CompressService:
                 "compression_level": options.get("compression_level", "medium"),
                 "images_processed": stats.get("images_processed", 0),
                 "images_downsampled": stats.get("images_downsampled", 0),
-                "images_skipped": stats.get("images_skipped", 0)
+                "images_skipped": stats.get("images_skipped", 0),
             }
 
         except Exception as e:
@@ -71,14 +71,11 @@ class CompressService:
                 result = self.compress_file(file_config, options)
                 if result["success"]:
                     results.append(result)
-                    compressed_files.append({
-                        'path': result['output_path'],
-                        'filename': result['filename']
-                    })
+                    compressed_files.append({"path": result["file_path"], "filename": result["filename"]})  # ← FIX 1
                     # Calculate savings
                     original = result.get("original_size", 0)
                     compressed = result.get("compressed_size", 0)
-                    total_savings += (original - compressed)
+                    total_savings += original - compressed
 
             # Create zip file if multiple files were compressed
             if len(compressed_files) > 1:
@@ -93,13 +90,10 @@ class CompressService:
                 final_output_path = zip_path
             elif compressed_files:
                 # For single file, just use the compressed file
-                final_filename = compressed_files[0]['filename']
-                final_output_path = compressed_files[0]['path']
+                final_filename = compressed_files[0]["filename"]
+                final_output_path = compressed_files[0]["path"]
             else:
-                return {
-                    "success": False,
-                    "error": "No files were successfully compressed"
-                }
+                return {"success": False, "error": "No files were successfully compressed"}
 
             return {
                 "success": True,
@@ -109,7 +103,7 @@ class CompressService:
                 "total_savings": total_savings,
                 "results": results,
                 "filename": final_filename,
-                "output_path": final_output_path
+                "file_path": final_output_path,  # ← FIX 2
             }
 
         except Exception as e:
@@ -118,26 +112,23 @@ class CompressService:
 
     def compress_pdf_enhanced(self, input_path, output_filename, original_filename, options=None):
         """
-        ENHANCED COMPRESSION: Updated to match route compression levels
+        ENHANCED COMPRESSION: Smart compression that never increases file size
         """
         options = options or {}
-        compression_level = options.get('compression_level', 'medium')
+        compression_level = options.get("compression_level", "medium")
 
         # Match the compression levels from the routes
-        if compression_level == 'low':
-            image_quality = 95  # Matches route definition
-            target_dpi = 200  # Matches route definition
-            deflate = True
-        elif compression_level == 'high':
-            image_quality = 75  # Matches route definition
-            target_dpi = 120  # Matches route definition
-            deflate = True
+        if compression_level == "low":
+            image_quality = 95
+            target_dpi = 200
+        elif compression_level == "high":
+            image_quality = 75
+            target_dpi = 120
         else:  # medium
-            image_quality = 85  # Matches route definition
-            target_dpi = 150  # Matches route definition
-            deflate = True
+            image_quality = 85
+            target_dpi = 150
 
-        downsample = options.get('downsample_images', True)
+        downsample = options.get("downsample_images", True)
 
         print("=" * 80)
         print("ENHANCED PDF COMPRESSION")
@@ -152,9 +143,9 @@ class CompressService:
         print(f"Image quality: {image_quality}%")
         print(f"Target DPI: {target_dpi}")
         print(f"Downsample images: {downsample}")
-        print(f"Deflate compression: {deflate}")
 
         import fitz
+
         doc = fitz.open(input_path)
         total_pages = len(doc)
 
@@ -181,68 +172,76 @@ class CompressService:
                         image_bytes = base_image["image"]
                         original_img_size = len(image_bytes)
 
-                        # Skip very small images
-                        if original_img_size < 5120:  # 5KB
+                        # Skip very small images (already compressed)
+                        if original_img_size < 10240:  # 10KB
                             images_skipped += 1
                             continue
 
                         img = Image.open(io.BytesIO(image_bytes))
                         original_width, original_height = img.size
 
-                        # DPI calculation and reduction
-                        current_dpi = max(original_width / 8.5, original_height / 11)
+                        # Skip small images
+                        if original_width < 200 or original_height < 200:
+                            images_skipped += 1
+                            continue
 
+                        # DPI calculation
+                        current_dpi = max(original_width / 8.5, original_height / 11)
                         should_resize = downsample and current_dpi > target_dpi
 
                         if should_resize:
                             scale_factor = target_dpi / current_dpi
-                            scale_factor = min(scale_factor, 0.7)  # Don't scale below 70%
+                            scale_factor = max(scale_factor, 0.5)  # Don't scale below 50%
                             new_width = int(original_width * scale_factor)
                             new_height = int(original_height * scale_factor)
 
-                            # Ensure minimum reasonable size
-                            if new_width > 300 and new_height > 300:
+                            # Ensure minimum size
+                            if new_width >= 200 and new_height >= 200:
                                 img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
                                 images_downsampled += 1
 
                                 if page_num < 3 and img_index < 2:
                                     print(
-                                        f"      Image {img_index + 1}: {original_width}x{original_height} → {new_width}x{new_height} (DPI: {current_dpi:.0f}→{target_dpi})")
+                                        f"    Image {img_index + 1}: {original_width}x{original_height} → "
+                                        f"{new_width}x{new_height} (DPI: {current_dpi:.0f}→{target_dpi})"
+                                    )
 
+                        # Compress image
                         img_output = io.BytesIO()
 
-                        # Convert to RGB for better JPEG compression
-                        if img.mode in ('RGBA', 'LA', 'P'):
-                            # Create white background for transparent images
-                            background = Image.new('RGB', img.size, (255, 255, 255))
-                            if img.mode == 'RGBA':
+                        # Convert to RGB for JPEG
+                        if img.mode in ("RGBA", "LA", "P"):
+                            background = Image.new("RGB", img.size, (255, 255, 255))
+                            if img.mode == "RGBA":
                                 background.paste(img, mask=img.split()[-1])
                             else:
                                 background.paste(img)
                             img = background
-                        elif img.mode != 'RGB':
-                            img = img.convert('RGB')
+                        elif img.mode != "RGB":
+                            img = img.convert("RGB")
 
-                        # Use JPEG for all images
-                        img.save(img_output, format='JPEG', quality=image_quality, optimize=True)
+                        # Save as JPEG
+                        img.save(img_output, format="JPEG", quality=image_quality, optimize=True)
                         img_bytes = img_output.getvalue()
 
-                        # Always replace if we resized, otherwise only if smaller
-                        if should_resize or len(img_bytes) < original_img_size * 0.95:
+                        # CRITICAL: Only replace if we got real compression (at least 10% reduction)
+                        if len(img_bytes) < original_img_size * 0.9:
                             page.replace_image(xref, stream=img_bytes)
                             images_processed += 1
                             if page_num < 3:
                                 size_reduction = (1 - len(img_bytes) / original_img_size) * 100
                                 print(
-                                    f"      Image {img_index + 1}: {original_img_size / 1024:.1f}KB → {len(img_bytes) / 1024:.1f}KB ({size_reduction:.1f}% reduction)")
+                                    f"    Image {img_index + 1}: {original_img_size / 1024:.1f}KB → "
+                                    f"{len(img_bytes) / 1024:.1f}KB ({size_reduction:.1f}% reduction)"
+                                )
                         else:
                             if page_num < 3:
-                                print(f"      Image {img_index + 1}: Skipped (minimal size reduction)")
+                                print(f"    Image {img_index + 1}: Skipped (no significant compression)")
                             images_skipped += 1
 
                     except Exception as e:
                         if page_num < 3:
-                            print(f"      Warning: Could not process image {img_index + 1}: {e}")
+                            print(f"    Warning: Could not process image {img_index + 1}: {e}")
                         images_skipped += 1
 
             elif page_num < 3:
@@ -253,16 +252,16 @@ class CompressService:
         print(f"Images downsampled: {images_downsampled}")
         print(f"Images skipped: {images_skipped}")
 
-        print(f"\nSaving compressed PDF...")
-
         # Use file manager for output path
         final_output = str(self.file_manager.get_download_path(output_filename))
 
+        # Save with compression only if we actually compressed something
         try:
-            # Remove existing file to avoid conflicts
+            # Remove existing file
             if os.path.exists(final_output):
                 os.remove(final_output)
 
+            # Save with moderate compression settings
             doc.save(
                 final_output,
                 garbage=4,
@@ -270,71 +269,58 @@ class CompressService:
                 deflate_images=True,
                 deflate_fonts=True,
                 clean=True,
-                pretty=False,
-                ascii=False
             )
-
             doc.close()
 
             compressed_size = os.path.getsize(final_output)
-            compression_ratio = (1 - compressed_size / original_size) * 100
 
-            print("\n" + "=" * 80)
-            print(f"✅ Compression complete!")
-            print(f"📄 Original size: {original_size / (1024 * 1024):.2f} MB")
-            print(f"📦 Final size: {compressed_size / (1024 * 1024):.2f} MB")
+            # CRITICAL CHECK: If compressed file is larger, use original
+            if compressed_size >= original_size:
+                print("\n⚠️ Warning: Compressed file is larger than original!")
+                print("   Using original file instead...")
 
-            if compression_ratio > 0:
-                print(
-                    f"💾 Space saved: {(original_size - compressed_size) / (1024 * 1024):.2f} MB ({compression_ratio:.1f}% reduction)")
+                # Copy original to output location
+                import shutil
+
+                if os.path.exists(final_output):
+                    os.remove(final_output)
+                shutil.copy2(input_path, final_output)
+
+                compressed_size = original_size
+                compression_ratio = 0
+
+                print("\n" + "=" * 80)
+                print("✅ Compression complete (original file used)")
+                print(f"📄 File size: {original_size / (1024 * 1024):.2f} MB")
+                print("💡 No compression was beneficial for this file")
+                print(f"💽 Output: {final_output}")
+                print("=" * 80)
             else:
-                print(f"📈 File size increased by: {abs(compression_ratio):.1f}%")
+                compression_ratio = (1 - compressed_size / original_size) * 100
 
-            print(f"💽 Output: {final_output}")
-            print("=" * 80)
+                print("\n" + "=" * 80)
+                print("✅ Compression complete!")
+                print(f"📄 Original size: {original_size / (1024 * 1024):.2f} MB")
+                print(f"📦 Final size: {compressed_size / (1024 * 1024):.2f} MB")
+                print(
+                    f"💾 Space saved: {(original_size - compressed_size) / (1024 * 1024):.2f} MB "
+                    f"({compression_ratio:.1f}% reduction)"
+                )
+                print(f"💽 Output: {final_output}")
+                print("=" * 80)
 
             return {
-                'success': True,
-                'original_size': original_size,
-                'compressed_size': compressed_size,
-                'compression_ratio': compression_ratio,
-                'reduction_percent': compression_ratio,
-                'images_processed': images_processed,
-                'images_downsampled': images_downsampled,
-                'images_skipped': images_skipped
+                "success": True,
+                "original_size": original_size,
+                "compressed_size": compressed_size,
+                "compression_ratio": compression_ratio,
+                "reduction_percent": compression_ratio,
+                "images_processed": images_processed,
+                "images_downsampled": images_downsampled,
+                "images_skipped": images_skipped,
             }
 
         except Exception as e:
             print(f"\n❌ Error during compression: {e}")
-            # Fallback: save without compression
-            try:
-                doc.close()
-                # Create a simple compressed version as fallback
-                doc = fitz.open(input_path)
-                doc.save(final_output, garbage=3, deflate=True)
-                doc.close()
-
-                compressed_size = os.path.getsize(final_output)
-                compression_ratio = (1 - compressed_size / original_size) * 100
-
-                print(f"🔄 Using fallback compression")
-                print(f"📦 Final size: {compressed_size / (1024 * 1024):.2f} MB")
-                print(f"💾 Reduction: {compression_ratio:.1f}%")
-
-                return {
-                    'success': True,
-                    'original_size': original_size,
-                    'compressed_size': compressed_size,
-                    'compression_ratio': compression_ratio,
-                    'reduction_percent': compression_ratio,
-                    'images_processed': images_processed,
-                    'images_downsampled': images_downsampled,
-                    'images_skipped': images_skipped,
-                    'error': f'Used fallback compression: {str(e)}'
-                }
-            except Exception as fallback_error:
-                print(f"❌ Fallback also failed: {fallback_error}")
-                return {
-                    'success': False,
-                    'error': f'Compression failed: {str(e)}'
-                }
+            logger.error(f"Compression error: {str(e)}")
+            return {"success": False, "error": f"Compression failed: {str(e)}"}

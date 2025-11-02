@@ -4,15 +4,15 @@ PDF Merge Core Logic with Two-Pass Approach and Separate Pagination
 
 import os
 import tempfile
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import fitz  # type: ignore
 
 from ..exceptions.pdf_exceptions import PDFMergeError
 from ..models.merge_options import MergeOptions
 from ..models.pdf_file import PDFFile
-from ..utils.ocr_utils import get_safe_page_number_position
 from ..utils.font_utils import ProjectFontManager
+from ..utils.ocr_utils import get_safe_page_number_position
 
 
 def create_bookmarks(pdf_doc, file_info: List[Dict[str, Any]], toc_page_count: int = 0):
@@ -28,10 +28,10 @@ def create_bookmarks(pdf_doc, file_info: List[Dict[str, Any]], toc_page_count: i
     for info in file_info:
         # Calculate the bookmark position accounting for TOC pages
         # Add toc_page_count to skip over TOC pages
-        bookmark_page = info['start_page'] + 1 + toc_page_count
+        bookmark_page = info["start_page"] + 1 + toc_page_count
 
         # Create bookmark entry: [level, title, page_number]
-        toc.append([1, info['name'], bookmark_page])
+        toc.append([1, info["name"], bookmark_page])
 
     pdf_doc.set_toc(toc)
     print(f"✓ Bookmarks created with TOC offset: +{toc_page_count} pages")
@@ -69,8 +69,8 @@ class PDFMerger:
             # === PASS 1: CREATE ALL CONTENT PAGES ===
             print("=== PASS 1: Creating Content Pages ===")
 
-            content_pages_info = []  # Store info about each content page
-            file_info = []  # For bookmarks
+            content_pages_info: List[Dict[str, Any]] = []  # Store info about each content page
+            file_info: List[Dict[str, Any]] = []  # For bookmarks  # For bookmarks
             current_content_page_index = 0  # 0-based index in output PDF
 
             # First, create all content pages without TOC
@@ -94,12 +94,12 @@ class PDFMerger:
                 # Process each page and store information
                 for page_num in range(page_count):
                     page_info = {
-                        'source_pdf': source_pdf,
-                        'page_num': page_num,
-                        'pdf_file': pdf_file,
-                        'content_page_number': self.options.page_start + len(content_pages_info),
-                        'output_index': current_content_page_index,
-                        'file_name': pdf_file.name
+                        "source_pdf": source_pdf,
+                        "page_num": page_num,
+                        "pdf_file": pdf_file,
+                        "content_page_number": self.options.page_start + len(content_pages_info),
+                        "output_index": current_content_page_index,
+                        "file_name": pdf_file.name,
                     }
 
                     if self.options.add_headers:
@@ -108,40 +108,32 @@ class PDFMerger:
                             source_pdf,
                             page_num,
                             pdf_file,
-                            page_info['content_page_number'],
+                            page_info["content_page_number"],
                         )
                     else:
                         self._copy_page_directly(
                             output_pdf,
                             source_pdf,
                             page_num,
-                            page_info['content_page_number'],
+                            page_info["content_page_number"],
                         )
 
                     content_pages_info.append(page_info)
                     current_content_page_index += 1
 
                 # Store file info for bookmarks
-                file_info.append({
-                    'name': pdf_file.name,
-                    'start_page': file_start_index,
-                    'page_count': page_count
-                })
+                file_info.append({"name": pdf_file.name, "start_page": file_start_index, "page_count": page_count})
 
             # === PASS 2: ADD TOC WITH ROMAN NUMERALS AND WORKING LINKS ===
-            print(f"\n=== PASS 2: Adding TOC with Roman Numerals ===")
+            print("\n=== PASS 2: Adding TOC with Roman Numerals ===")
 
             toc_page_count = 0
             if self.options.add_toc and len(files) > 1:
-                toc_page_count = self._create_toc_with_links(
-                    output_pdf,
-                    files,
-                    content_pages_info
-                )
+                toc_page_count = self._create_toc_with_links(output_pdf, files, content_pages_info)
                 print(f"✓ Added {toc_page_count} TOC page(s) with Roman numerals")
 
             # === UPDATE PAGE NUMBERS WITH SEPARATE PAGINATION ===
-            print(f"\n=== Applying Separate Pagination ===")
+            print("\n=== Applying Separate Pagination ===")
             self._apply_separate_pagination(output_pdf, toc_page_count, content_pages_info)
 
             # === ADD BOOKMARKS ===
@@ -149,7 +141,7 @@ class PDFMerger:
                 print(f"\nCreating bookmarks for {len(file_info)} files:")
                 for info in file_info:
                     # Bookmark points to content pages (Arabic numbering)
-                    bookmark_target = info['start_page'] + 1 + toc_page_count
+                    bookmark_target = info["start_page"] + 1 + toc_page_count
                     print(f"  - '{info['name']}' -> page {bookmark_target}")
 
                 create_bookmarks(output_pdf, file_info, toc_page_count)
@@ -157,14 +149,14 @@ class PDFMerger:
 
             # Final summary
             print("\n" + "=" * 80)
-            print(f"✓ Merge complete!")
+            print("✓ Merge complete!")
             print(f"✓ Processed {len(files)} PDF files")
             print(f"✓ Total {len(content_pages_info)} content pages")
             print(f"✓ Output PDF has {len(output_pdf)} total pages")
             if self.options.add_toc:
                 print(f"✓ Table of Contents: {toc_page_count} page(s) (Roman numerals)")
                 print(f"✓ Content pages: {len(content_pages_info)} pages (Arabic numerals 1-{len(content_pages_info)})")
-                print(f"✓ TOC links are fully functional")
+                print("✓ TOC links are fully functional")
             print("=" * 80)
 
             return output_pdf
@@ -172,18 +164,19 @@ class PDFMerger:
         except Exception as e:
             try:
                 output_pdf.close()
-            except:
+            except (AttributeError, OSError, ValueError):  # Catch specific exceptions that close() might raise
                 pass
             raise PDFMergeError(f"Failed to merge PDFs: {str(e)}")
         finally:
             for source_pdf in source_pdfs:
                 try:
                     source_pdf.close()
-                except:
+                except (AttributeError, OSError, ValueError):
                     pass
 
-    def _create_toc_with_links(self, output_pdf: fitz.Document, files: List[PDFFile],
-                               content_pages_info: List[Dict]) -> int:
+    def _create_toc_with_links(
+        self, output_pdf: fitz.Document, files: List[PDFFile], content_pages_info: List[Dict]
+    ) -> int:
         """
         Create TOC with Roman numerals and working links to content pages
         Returns number of TOC pages created
@@ -196,33 +189,24 @@ class PDFMerger:
         file_page_starts = {}
         current_file = None
         for page_info in content_pages_info:
-            if page_info['file_name'] != current_file:
-                file_page_starts[page_info['file_name']] = page_info['content_page_number']
-                current_file = page_info['file_name']
+            if page_info["file_name"] != current_file:
+                file_page_starts[page_info["file_name"]] = page_info["content_page_number"]
+                current_file = page_info["file_name"]
 
         # Add title - CENTER ALIGNED with top margin
         title = "Table of Contents"
         title_font_size = 18
         title_y = 80  # Increased from 50 for better top margin
 
-        title_width = ProjectFontManager.get_text_length(title, fontsize=title_font_size, variant='regular')
+        title_width = ProjectFontManager.get_text_length(title, fontsize=title_font_size, variant="regular")
         title_x = (612 - title_width) / 2
 
         ProjectFontManager.insert_text_with_font(
-            toc_page, (title_x, title_y),
-            title,
-            fontsize=title_font_size,
-            variant='regular',
-            color=(0, 0, 0)
+            toc_page, (title_x, title_y), title, fontsize=title_font_size, variant="regular", color=(0, 0, 0)
         )
 
         # Add separator line under title
-        toc_page.draw_line(
-            (50, title_y + 10),
-            (562, title_y + 10),
-            width=1,
-            color=(0, 0, 0)
-        )
+        toc_page.draw_line((50, title_y + 10), (562, title_y + 10), width=1, color=(0, 0, 0))
 
         # Add TOC entries with working links
         entry_start_y = title_y + 40
@@ -243,21 +227,13 @@ class PDFMerger:
 
             # Add entry text (left-aligned)
             ProjectFontManager.insert_text_with_font(
-                toc_page, (60, current_y),
-                entry_text,
-                fontsize=12,
-                variant='regular',
-                color=(0, 0, 0)
+                toc_page, (60, current_y), entry_text, fontsize=12, variant="regular", color=(0, 0, 0)
             )
 
             # Add page number (LEFT ALIGNED at consistent position)
             page_number_x = 500
             ProjectFontManager.insert_text_with_font(
-                toc_page, (page_number_x, current_y),
-                page_text,
-                fontsize=12,
-                variant='regular',
-                color=(0, 0, 0)
+                toc_page, (page_number_x, current_y), page_text, fontsize=12, variant="regular", color=(0, 0, 0)
             )
 
             # === CREATE CLICKABLE LINK ===
@@ -265,19 +241,21 @@ class PDFMerger:
             # TOC pages are at the beginning, so content starts after TOC
             target_page_index = None
             for page_info in content_pages_info:
-                if page_info['file_name'] == pdf_file.name:
-                    target_page_index = page_info['output_index'] + len(toc_pages)
+                if page_info["file_name"] == pdf_file.name:
+                    target_page_index = page_info["output_index"] + len(toc_pages)
                     break
 
             if target_page_index is not None:
                 # Create clickable area for the entire entry
                 link_rect = fitz.Rect(50, current_y - 8, 562, current_y + 12)
-                toc_page.insert_link({
-                    "kind": fitz.LINK_GOTO,
-                    "from": link_rect,
-                    "page": target_page_index,
-                    "to": fitz.Point(0, 50)  # Start at top of page
-                })
+                toc_page.insert_link(
+                    {
+                        "kind": fitz.LINK_GOTO,
+                        "from": link_rect,
+                        "page": target_page_index,
+                        "to": fitz.Point(0, 50),  # Start at top of page
+                    }
+                )
 
             current_y += line_height
 
@@ -291,7 +269,9 @@ class PDFMerger:
 
         print(f"✓ Created {len(toc_pages)} TOC page(s) with working links")
         print(
-            f"✓ TOC uses Roman numerals: {[roman_numerals[i] if i < len(roman_numerals) else str(i + 1) for i in range(len(toc_pages))]}")
+            f"✓ TOC uses Roman numerals: "
+            f"{[roman_numerals[i] if i < len(roman_numerals) else str(i + 1) for i in range(len(toc_pages))]}"
+        )
         print(f"✓ TOC page numbers use same position as content: {self.options.page_number_position}")
 
         return len(toc_pages)
@@ -324,8 +304,9 @@ class PDFMerger:
 
         # Add semi-transparent background (same as content pages)
         bg_padding = 5
-        text_width = ProjectFontManager.get_text_length(page_text, fontsize=self.options.page_number_font_size,
-                                                        variant='regular')
+        text_width = ProjectFontManager.get_text_length(
+            page_text, fontsize=self.options.page_number_font_size, variant="regular"
+        )
 
         # Create background rectangle based on position
         if safe_position in ["top-center", "bottom-center"]:
@@ -348,42 +329,47 @@ class PDFMerger:
         # Insert page number (aligned based on position)
         if safe_position in ["top-center", "bottom-center"]:
             ProjectFontManager.insert_text_with_font(
-                page, (x - text_width / 2, y),
+                page,
+                (x - text_width / 2, y),
                 page_text,
                 fontsize=self.options.page_number_font_size,
-                variant='regular',
-                color=(0.3, 0.3, 0.3)  # Slightly lighter for TOC pages
+                variant="regular",
+                color=(0.3, 0.3, 0.3),  # Slightly lighter for TOC pages
             )
         else:  # right-aligned positions
             ProjectFontManager.insert_text_with_font(
-                page, (x - text_width, y),
+                page,
+                (x - text_width, y),
                 page_text,
                 fontsize=self.options.page_number_font_size,
-                variant='regular',
-                color=(0.3, 0.3, 0.3)  # Slightly lighter for TOC pages
+                variant="regular",
+                color=(0.3, 0.3, 0.3),  # Slightly lighter for TOC pages
             )
 
-    def _apply_separate_pagination(self, output_pdf: fitz.Document, toc_page_count: int,
-                                   content_pages_info: List[Dict]):
+    def _apply_separate_pagination(
+        self, output_pdf: fitz.Document, toc_page_count: int, content_pages_info: List[Dict]
+    ):
         """
         Apply separate pagination: Roman for TOC, Arabic for content
         """
         # Add Arabic numerals to content pages
         for page_info in content_pages_info:
             # Calculate the actual page index in output PDF (after TOC pages)
-            output_page_index = page_info['output_index'] + toc_page_count
+            output_page_index = page_info["output_index"] + toc_page_count
             page = output_pdf[output_page_index]
 
             # Remove any existing page numbers
             self._clear_existing_page_number(page)
 
             # Add Arabic page number
-            self._add_page_number_only(page, page_info['content_page_number'])
+            self._add_page_number_only(page, page_info["content_page_number"])
 
-        print(f"✓ Applied separate pagination:")
-        print(f"  - TOC pages: Roman numerals (I, II, III...)")
+        print("✓ Applied separate pagination:")
+        print("  - TOC pages: Roman numerals (I, II, III...)")
         print(
-            f"  - Content pages: Arabic numerals ({self.options.page_start}-{self.options.page_start + len(content_pages_info) - 1})")
+            f"  - Content pages: Arabic numerals "
+            f"({self.options.page_start}-{self.options.page_start + len(content_pages_info) - 1})"
+        )
         print(f"  - Page number position: {self.options.page_number_position}")
 
     def _clear_existing_page_number(self, page: fitz.Page):
@@ -397,16 +383,16 @@ class PDFMerger:
 
             page.draw_rect(clear_rect_top, color=(1, 1, 1), fill=(1, 1, 1))
             page.draw_rect(clear_rect_bottom, color=(1, 1, 1), fill=(1, 1, 1))
-        except:
+        except Exception:
             pass  # If clearing fails, continue anyway
 
     def _process_page_with_headers(
-            self,
-            output_pdf: fitz.Document,
-            source_pdf: fitz.Document,
-            page_num: int,
-            pdf_file: PDFFile,
-            page_number: int,
+        self,
+        output_pdf: fitz.Document,
+        source_pdf: fitz.Document,
+        page_num: int,
+        pdf_file: PDFFile,
+        page_number: int,
     ):
         """Process and add page with headers (without page numbers initially)"""
         new_page = output_pdf.new_page(-1, width=612, height=792)
@@ -459,18 +445,12 @@ class PDFMerger:
 
         if header_notes[0]:
             ProjectFontManager.insert_text_with_font(
-                page, (margin, header_y),
-                header_notes[0],
-                fontsize=font_size,
-                variant='regular'
+                page, (margin, header_y), header_notes[0], fontsize=font_size, variant="regular"
             )
 
         if header_notes[1]:
             ProjectFontManager.insert_text_with_font(
-                page, (margin, header_y + line_height),
-                header_notes[1],
-                fontsize=font_size,
-                variant='regular'
+                page, (margin, header_y + line_height), header_notes[1], fontsize=font_size, variant="regular"
             )
 
         # Add header separator only if headers are present
@@ -483,11 +463,11 @@ class PDFMerger:
             )
 
     def _copy_page_directly(
-            self,
-            output_pdf: fitz.Document,
-            source_pdf: fitz.Document,
-            page_num: int,
-            page_number: int,
+        self,
+        output_pdf: fitz.Document,
+        source_pdf: fitz.Document,
+        page_num: int,
+        page_number: int,
     ):
         """Copy page without modifications (page numbers added later)"""
         output_pdf.insert_pdf(source_pdf, from_page=page_num, to_page=page_num)
@@ -529,8 +509,9 @@ class PDFMerger:
 
         # Add semi-transparent background
         bg_padding = 5
-        text_width = ProjectFontManager.get_text_length(page_text, fontsize=self.options.page_number_font_size,
-                                                        variant='regular')
+        text_width = ProjectFontManager.get_text_length(
+            page_text, fontsize=self.options.page_number_font_size, variant="regular"
+        )
 
         # Create background rectangle based on position
         if safe_position in ["top-center", "bottom-center"]:
@@ -553,17 +534,11 @@ class PDFMerger:
         # Insert page number (aligned based on position)
         if safe_position in ["top-center", "bottom-center"]:
             ProjectFontManager.insert_text_with_font(
-                page, (x - text_width / 2, y),
-                page_text,
-                fontsize=self.options.page_number_font_size,
-                variant='regular'
+                page, (x - text_width / 2, y), page_text, fontsize=self.options.page_number_font_size, variant="regular"
             )
         else:  # right-aligned positions
             ProjectFontManager.insert_text_with_font(
-                page, (x - text_width, y),
-                page_text,
-                fontsize=self.options.page_number_font_size,
-                variant='regular'
+                page, (x - text_width, y), page_text, fontsize=self.options.page_number_font_size, variant="regular"
             )
 
 

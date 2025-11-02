@@ -49,11 +49,13 @@ def upload_file():
         # Save file using file_utils (which now uses file manager)
         file_path = save_uploaded_file(file)
 
-        return jsonify({
-            "success": True,
-            "file_path": file_path,
-            "filename": secure_filename(file.filename),
-        })
+        return jsonify(
+            {
+                "success": True,
+                "file_path": file_path,
+                "filename": secure_filename(file.filename),
+            }
+        )
 
     except Exception as e:
         logger.exception("Upload error in normalize")
@@ -94,10 +96,12 @@ def normalize_pdf():
 
             # Add batch-specific info
             if result.get("batch"):
-                response_data.update({
-                    "total_files": result.get("total_files", 0),
-                    "successful": result.get("successful", 0),
-                })
+                response_data.update(
+                    {
+                        "total_files": result.get("total_files", 0),
+                        "successful": result.get("successful", 0),
+                    }
+                )
 
             return jsonify(response_data)
         else:
@@ -138,11 +142,7 @@ def download_normalized(file_id):
             return jsonify({"success": False, "error": f"File not found: {file_id}"}), 404
 
         logger.info(f"Serving normalized file from: {file_path}")
-        return send_file(
-            str(file_path),
-            as_attachment=True,
-            download_name=file_path.name
-        )
+        return send_file(str(file_path), as_attachment=True, download_name=file_path.name)
 
     except Exception as e:
         logger.error(f"Download error: {e}")
@@ -173,11 +173,9 @@ def cleanup_file(file_id):
                     files_cleaned += 1
                     logger.info(f"Cleaned up from old downloads: {file_path}")
 
-        return jsonify({
-            "success": True,
-            "message": f"Cleaned up {files_cleaned} files",
-            "files_cleaned": files_cleaned
-        })
+        return jsonify(
+            {"success": True, "message": f"Cleaned up {files_cleaned} files", "files_cleaned": files_cleaned}
+        )
 
     except Exception as e:
         logger.error(f"Cleanup error: {e}")
@@ -195,16 +193,19 @@ def preview_normalization():
 
         # Analyze the PDF and return preview information
         from ..utils.pdf_utils import analyze_pdf
+
         analysis = analyze_pdf(data["file"]["path"])
 
-        return jsonify({
-            "success": True,
-            "analysis": analysis,
-            "suggested_settings": {
-                "page_size": "letter" if analysis.get("size_category") == "standard" else "a4",
-                "orientation": analysis.get("orientation", "portrait")
+        return jsonify(
+            {
+                "success": True,
+                "analysis": analysis,
+                "suggested_settings": {
+                    "page_size": "letter" if analysis.get("size_category") == "standard" else "a4",
+                    "orientation": analysis.get("orientation", "portrait"),
+                },
             }
-        })
+        )
 
     except Exception as e:
         logger.error(f"Preview error: {e}")

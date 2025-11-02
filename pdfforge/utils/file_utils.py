@@ -6,15 +6,15 @@ File Utility Functions - Updated with File Manager Integration
 import logging
 import os
 import zipfile
-from pathlib import Path
 from typing import Dict, List
+
 from werkzeug.utils import secure_filename
 
 # Import the file manager
 from .file_manager import get_file_manager
 
 
-def save_uploaded_file(file, upload_folder: str = None) -> str:
+def save_uploaded_file(file, upload_folder: str | None = None) -> str:
     """Save uploaded file to appropriate location."""
     filename = secure_filename(file.filename)
 
@@ -52,13 +52,13 @@ def save_pdf(pdf_bytes, filename: str, component: str = "merge") -> str:
     file_path = file_manager.get_download_path(filename)
 
     try:
-        if hasattr(pdf_bytes, 'getbuffer'):
+        if hasattr(pdf_bytes, "getbuffer"):
             # It's a BytesIO object
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 f.write(pdf_bytes.getbuffer())
         else:
             # It's bytes
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 f.write(pdf_bytes)
 
         logging.info(f"PDF saved to: {file_path}")
@@ -95,10 +95,10 @@ def create_zip_archive(files: List[Dict[str, str]], zip_filename: str, component
     zip_path = file_manager.get_download_path(zip_filename)
 
     try:
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             for file_info in files:
-                file_path = file_info['path']
-                arcname = file_info['filename']
+                file_path = file_info["path"]
+                arcname = file_info["filename"]
 
                 # Ensure the file exists before adding to zip
                 if os.path.exists(file_path):

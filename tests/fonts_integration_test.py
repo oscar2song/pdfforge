@@ -1,5 +1,4 @@
 # scripts/fonts_integration_test.py
-import os
 import sys
 from pathlib import Path
 
@@ -15,10 +14,10 @@ def final_integration_test():
 
     try:
         # Test all components
-        from pdfforge.utils.font_utils import ProjectFontManager
         from pdfforge.core.merge import PDFMerger
         from pdfforge.models.merge_options import MergeOptions
         from pdfforge.services.merge_service import MergeService
+        from pdfforge.utils.font_utils import ProjectFontManager
 
         print("✓ All imports successful")
 
@@ -27,17 +26,12 @@ def final_integration_test():
         print(f"✓ Fonts initialized: {ProjectFontManager.get_default_font()}")
 
         # Test merge service
-        service = MergeService()
+        _service = MergeService()  # noqa: F841
         print("✓ Merge service created")
 
         # Test PDFMerger
-        options = MergeOptions(
-            add_headers=True,
-            add_page_numbers=True,
-            add_bookmarks=True,
-            add_toc=True
-        )
-        merger = PDFMerger(options)
+        options = MergeOptions(add_headers=True, add_page_numbers=True, add_bookmarks=True, add_toc=True)
+        _merger = PDFMerger(options)  # noqa: F841
         print("✓ PDFMerger created with enhanced options")
 
         print("\n🎉 SYSTEM STATUS: FULLY OPERATIONAL")
@@ -57,6 +51,7 @@ def final_integration_test():
     except Exception as e:
         print(f"❌ Integration test failed: {e}")
         import traceback
+
         traceback.print_exc()
 
 

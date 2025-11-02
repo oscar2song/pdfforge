@@ -82,5 +82,4 @@ class MergeOptions:
             "page_number_font_size": self.page_number_font_size,
             "add_bookmarks": self.add_bookmarks,
             "add_toc": self.add_toc,
-
         }
