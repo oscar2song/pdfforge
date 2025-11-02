@@ -1,0 +1,18 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  pdf-merge-app:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - pdf_data:/opt/pdf-merge-app/data
+      - pdf_logs:/opt/pdf-merge-app/logs
+    environment:
+      - PDF_APP_DATA_DIR=/opt/pdf-merge-app/data
+      - FLASK_ENV=production
+
+volumes:
+  pdf_data:
+  pdf_logs:

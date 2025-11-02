@@ -1,14 +1,16 @@
+# pdfforge/routes/merge.py
 """
-Merge Routes - HTTP Request Handlers
+Merge Routes - HTTP Request Handlers - UPDATED with File Manager
 """
 
 import logging
-import os
+from pathlib import Path
 
 from flask import Blueprint, jsonify, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
 from ..services.merge_service import MergeService
+from ..utils.file_manager import get_file_manager
 from ..utils.file_utils import save_uploaded_file
 from ..utils.validation import allowed_file
 
@@ -20,10 +22,7 @@ merge_bp = Blueprint("merge", __name__, url_prefix="/merge")
 
 # Initialize service
 def get_merge_service():
-    # Use the uploads folder in the project root
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    uploads_folder = os.path.join(project_root, "uploads")
-    return MergeService(upload_folder=uploads_folder)  # Pass to constructor
+    return MergeService()  # No need to pass upload folder anymore
 
 
 @merge_bp.route("/")
@@ -47,12 +46,8 @@ def upload_file():
         if not allowed_file(file.filename):
             return jsonify({"success": False, "error": "Only PDF files are allowed"}), 400
 
-        # Save file to uploads folder
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        uploads_folder = os.path.join(project_root, "uploads")
-        os.makedirs(uploads_folder, exist_ok=True)
-
-        file_path = save_uploaded_file(file, uploads_folder)
+        # Save file using file_utils (which now uses file manager)
+        file_path = save_uploaded_file(file)  # No upload_folder needed
 
         return jsonify({
             "success": True,
@@ -65,6 +60,7 @@ def upload_file():
         return jsonify({"success": False, "error": "Upload failed: " + str(e)}), 500
 
 
+# pdfforge/routes/merge.py (update the process route)
 @merge_bp.route("/process", methods=["POST"])
 def merge_pdfs():
     """Process PDF merge request"""
@@ -78,17 +74,19 @@ def merge_pdfs():
         if len(data["files"]) < 2:
             return jsonify({"success": False, "error": "Please select at least 2 files to merge"}), 400
 
-        # Process files with service - NO upload_folder parameter needed
+        # Process files with service
         merge_service = get_merge_service()
         result = merge_service.merge_files(data["files"], data.get("options", {}))
 
         if result["success"]:
             response_data = {
                 "success": True,
-                "download_url": f"/merge/download/{result['filename']}",
+                "download_url": f"/download/component/merge/{result['file_id']}",
+                "download_url_legacy": f"/download/{result['filename']}",  # For backward compatibility
                 "output_filename": result["filename"],
                 "page_count": result.get("page_count", 0),
                 "file_count": result.get("file_count", len(data["files"])),
+                "file_id": result.get("file_id"),
             }
             return jsonify(response_data)
         else:
@@ -99,45 +97,77 @@ def merge_pdfs():
         return jsonify({"success": False, "error": "Merge processing failed: " + str(e)}), 500
 
 
-@merge_bp.route("/download/<filename>")
-def download_merged(filename):
-    """Download merged file"""
+@merge_bp.route("/download/<file_id>")
+def download_merged(file_id):
+    """Download merged file - UPDATED with file manager"""
     try:
-        # Use the project root uploads folder
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        uploads_folder = os.path.join(project_root, "uploads")
-        file_path = os.path.join(uploads_folder, filename)
+        file_manager = get_file_manager("merge")
 
-        logger.info(f"Looking for file at: {file_path}")
+        # Look for file in merge directory first
+        merge_dir = file_manager.get_component_dir()
+        file_path = None
 
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            return jsonify({"success": False, "error": f"File not found: {filename}"}), 404
+        # Search for file with the file_id in the filename
+        for file_in_dir in merge_dir.glob(f"*{file_id}*"):
+            if file_in_dir.is_file():
+                file_path = file_in_dir
+                break
+
+        # Fallback: check old uploads directory for backward compatibility
+        if not file_path or not file_path.exists():
+            old_uploads = Path(__file__).parent.parent.parent / "uploads"
+            if old_uploads.exists():
+                for file_in_dir in old_uploads.glob(f"*{file_id}*"):
+                    if file_in_dir.is_file():
+                        file_path = file_in_dir
+                        break
+
+        if not file_path or not file_path.exists():
+            logger.error(f"File not found for ID: {file_id}")
+            return jsonify({"success": False, "error": f"File not found: {file_id}"}), 404
 
         logger.info(f"Serving file from: {file_path}")
-        return send_file(file_path, as_attachment=True, download_name=filename)
+        return send_file(
+            str(file_path),
+            as_attachment=True,
+            download_name=file_path.name
+        )
 
     except Exception as e:
         logger.error(f"Download error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@merge_bp.route("/cleanup/<filename>", methods=["POST"])
-def cleanup_file(filename):
-    """Clean up temporary files"""
+@merge_bp.route("/cleanup/<file_id>", methods=["POST"])
+def cleanup_file(file_id):
+    """Clean up temporary files - UPDATED with file manager"""
     try:
-        # Clean up from uploads folder
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        uploads_folder = os.path.join(project_root, "uploads")
-        file_path = os.path.join(uploads_folder, filename)
+        file_manager = get_file_manager("merge")
+        files_cleaned = 0
 
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            logger.info(f"Cleaned up: {file_path}")
-        else:
-            logger.warning(f"File not found for cleanup: {file_path}")
+        # Clean up from merge directory
+        merge_dir = file_manager.get_component_dir()
+        for file_path in merge_dir.glob(f"*{file_id}*"):
+            if file_path.is_file():
+                file_path.unlink()
+                files_cleaned += 1
+                logger.info(f"Cleaned up from merge dir: {file_path}")
 
-        return jsonify({"success": True})
+        # Also clean up from old uploads directory for backward compatibility
+        old_uploads = Path(__file__).parent.parent.parent / "uploads"
+        if old_uploads.exists():
+            for file_path in old_uploads.glob(f"*{file_id}*"):
+                if file_path.is_file():
+                    file_path.unlink()
+                    files_cleaned += 1
+                    logger.info(f"Cleaned up from old uploads: {file_path}")
+
+        return jsonify({
+            "success": True,
+            "message": f"Cleaned up {files_cleaned} files",
+            "files_cleaned": files_cleaned
+        })
+
     except Exception as e:
         logger.error(f"Cleanup error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500

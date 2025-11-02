@@ -1,15 +1,16 @@
+# pdfforge/services/merge_service.py
 """
-Merge Service - Business Logic Layer
+Merge Service - Business Logic Layer - UPDATED with File Manager
 """
 
 import logging
-import os
-import tempfile
+from pathlib import Path
 from typing import Any, Dict, List
 
 from ..core.merge import PDFMerger
 from ..models.merge_options import MergeOptions
 from ..models.pdf_file import PDFFile
+from ..utils.file_manager import get_file_manager
 from ..utils.file_utils import cleanup_temp_files
 
 logger = logging.getLogger(__name__)
@@ -19,16 +20,12 @@ class MergeService:
     """High-level merge service with business logic"""
 
     def __init__(self, upload_folder=None):
-        """Initialize merge service with optional upload folder"""
-        if upload_folder is None:
-            # Get the project root directory (where the main app.py is)
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            self.upload_folder = os.path.join(project_root, "uploads")
-        else:
-            self.upload_folder = upload_folder
+        """Initialize merge service with file manager"""
+        self.file_manager = get_file_manager("merge")
 
-        # Ensure upload folder exists
-        os.makedirs(self.upload_folder, exist_ok=True)
+        # For backward compatibility - use file manager's upload directory
+        self.upload_folder = self.file_manager.uploads_dir
+
         logger.info(f"MergeService initialized with upload folder: {self.upload_folder}")
 
     def merge_files(
@@ -59,11 +56,11 @@ class MergeService:
             page_count = len(merged_doc)
             file_count = len(file_configs)
 
-            # Generate output filename
+            # Generate output filename using file manager
             output_filename = self._generate_output_filename(pdf_files, merge_options)
 
-            # Save result directly to uploads folder
-            final_output_path = os.path.join(self.upload_folder, output_filename)
+            # Save result to merge-specific downloads directory
+            final_output_path = self.file_manager.get_download_path(output_filename)
 
             # Save the merged document
             merged_doc.save(final_output_path, garbage=4, deflate=True)
@@ -79,12 +76,13 @@ class MergeService:
 
             return {
                 "success": True,
-                "file_path": final_output_path,
+                "file_path": str(final_output_path),
                 "filename": output_filename,
                 "page_count": page_count,
                 "file_count": file_count,
                 "add_bookmarks": merge_options.add_bookmarks,
                 "add_toc": merge_options.add_toc,  # Add TOC status to response
+                "file_id": Path(final_output_path).stem,  # Add file ID for download
             }
 
         except Exception as e:
@@ -107,18 +105,16 @@ class MergeService:
                 cleanup_temp_files(source_paths)
 
     def _generate_output_filename(self, pdf_files: List[PDFFile], options: MergeOptions) -> str:
-        """Generate output filename"""
+        """Generate output filename using file manager"""
         if options.output_filename:
             filename = options.output_filename
             if not filename.endswith(".pdf"):
                 filename += ".pdf"
             return filename
 
-        # Use first file's name with merged suffix
+        # Use file manager's naming convention
         if pdf_files:
             first_filename = pdf_files[0].name
-            # Remove any existing extensions and add _merged.pdf
-            base_name = os.path.splitext(first_filename)[0]
-            return f"{base_name}_merged.pdf"
+            return self.file_manager.generate_output_filename(first_filename, "merged")
         else:
-            return "merged.pdf"
+            return self.file_manager.generate_output_filename("documents", "merged")

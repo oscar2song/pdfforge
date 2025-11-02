@@ -1,16 +1,15 @@
-# compress_service.py - FIXED VERSION
+# compress_service.py - UPDATED WITH FILE MANAGER
+import io
 import logging
 import os
-import zipfile
-import shutil
 from datetime import datetime
-import io
+
 from PIL import Image
 
-from ..models.pdf_file import PDFFile
 from ..models.compress_options import CompressionOptions
-from ..exceptions.pdf_exceptions import PDFCompressionError
-from ..utils.file_utils import save_pdf, create_output_filename, create_zip_archive
+from ..models.pdf_file import PDFFile
+from ..utils.file_manager import get_file_manager
+from ..utils.file_utils import create_output_filename, create_zip_archive
 
 logger = logging.getLogger(__name__)
 
@@ -20,18 +19,13 @@ class CompressService:
 
     def __init__(self, options: CompressionOptions = None):
         self.options = options or CompressionOptions()
+        self.file_manager = get_file_manager(component="compress")
 
     def compress_file(self, file_config, options):
         """Compress a single file - matches the route expectation"""
         try:
             # Create PDFFile object with proper parameters
             pdf_file = PDFFile(file_config["path"], file_config.get("name"))
-
-            # Update compression options if provided
-            if options:
-                self.options = CompressionOptions(
-                    compression_level=options.get("compression_level", "medium")
-                )
 
             # Generate output filename
             original_name = file_config.get("name", "document.pdf")
@@ -43,12 +37,8 @@ class CompressService:
             if not stats.get("success", False):
                 return {"success": False, "error": stats.get("error", "Compression failed")}
 
-            # Build output path for response
-            output_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                "downloads",
-                compressed_name
-            )
+            # Build output path using file manager
+            output_path = str(self.file_manager.get_download_path(compressed_name))
 
             # Return the expected response format
             return {
@@ -60,7 +50,7 @@ class CompressService:
                 "compression_ratio": stats["compression_ratio"],
                 "reduction_percent": stats.get("reduction_percent", 0),
                 "used_compression": True,
-                "compression_level": self.options.compression_level,
+                "compression_level": options.get("compression_level", "medium"),
                 "images_processed": stats.get("images_processed", 0),
                 "images_downsampled": stats.get("images_downsampled", 0),
                 "images_skipped": stats.get("images_skipped", 0)
@@ -95,12 +85,16 @@ class CompressService:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 zip_filename = f"compressed_pdfs_{timestamp}.zip"
 
-                # Use file_utils to create zip
-                zip_path = create_zip_archive(compressed_files, zip_filename)
+                # Use file_utils to create zip with compress component
+                zip_path = create_zip_archive(compressed_files, zip_filename, "compress")
+
+                # Return the zip file path for download
                 final_filename = zip_filename
+                final_output_path = zip_path
             elif compressed_files:
                 # For single file, just use the compressed file
                 final_filename = compressed_files[0]['filename']
+                final_output_path = compressed_files[0]['path']
             else:
                 return {
                     "success": False,
@@ -114,7 +108,8 @@ class CompressService:
                 "successful": len(results),
                 "total_savings": total_savings,
                 "results": results,
-                "filename": final_filename
+                "filename": final_filename,
+                "output_path": final_output_path
             }
 
         except Exception as e:
@@ -123,23 +118,23 @@ class CompressService:
 
     def compress_pdf_enhanced(self, input_path, output_filename, original_filename, options=None):
         """
-        ENHANCED COMPRESSION: More aggressive and effective compression
+        ENHANCED COMPRESSION: Updated to match route compression levels
         """
         options = options or {}
         compression_level = options.get('compression_level', 'medium')
 
-        # More aggressive settings for better compression
+        # Match the compression levels from the routes
         if compression_level == 'low':
-            image_quality = 80  # Reduced from 95
-            target_dpi = 150  # Reduced from 200
-            deflate = True  # Enable deflate even for low
+            image_quality = 95  # Matches route definition
+            target_dpi = 200  # Matches route definition
+            deflate = True
         elif compression_level == 'high':
-            image_quality = 65  # More aggressive
-            target_dpi = 120
+            image_quality = 75  # Matches route definition
+            target_dpi = 120  # Matches route definition
             deflate = True
         else:  # medium
-            image_quality = 75  # More aggressive than before
-            target_dpi = 150
+            image_quality = 85  # Matches route definition
+            target_dpi = 150  # Matches route definition
             deflate = True
 
         downsample = options.get('downsample_images', True)
@@ -186,22 +181,21 @@ class CompressService:
                         image_bytes = base_image["image"]
                         original_img_size = len(image_bytes)
 
-                        # Skip very small images (increased threshold)
-                        if original_img_size < 5120:  # 5KB instead of 1KB
+                        # Skip very small images
+                        if original_img_size < 5120:  # 5KB
                             images_skipped += 1
                             continue
 
                         img = Image.open(io.BytesIO(image_bytes))
                         original_width, original_height = img.size
 
-                        # More aggressive DPI calculation and reduction
+                        # DPI calculation and reduction
                         current_dpi = max(original_width / 8.5, original_height / 11)
 
                         should_resize = downsample and current_dpi > target_dpi
 
                         if should_resize:
                             scale_factor = target_dpi / current_dpi
-                            # Be more aggressive with scaling
                             scale_factor = min(scale_factor, 0.7)  # Don't scale below 70%
                             new_width = int(original_width * scale_factor)
                             new_height = int(original_height * scale_factor)
@@ -229,12 +223,12 @@ class CompressService:
                         elif img.mode != 'RGB':
                             img = img.convert('RGB')
 
-                        # Use JPEG for all images (better compression than PNG)
+                        # Use JPEG for all images
                         img.save(img_output, format='JPEG', quality=image_quality, optimize=True)
                         img_bytes = img_output.getvalue()
 
                         # Always replace if we resized, otherwise only if smaller
-                        if should_resize or len(img_bytes) < original_img_size * 0.95:  # 5% threshold
+                        if should_resize or len(img_bytes) < original_img_size * 0.95:
                             page.replace_image(xref, stream=img_bytes)
                             images_processed += 1
                             if page_num < 3:
@@ -261,51 +255,29 @@ class CompressService:
 
         print(f"\nSaving compressed PDF...")
 
-        # Get downloads folder path
-        downloads_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "downloads")
-        os.makedirs(downloads_folder, exist_ok=True)
-
-        # Use unique temp filename to avoid conflicts
-        timestamp = datetime.now().strftime("%H%M%S")
-        temp_output = os.path.join(downloads_folder, f"{output_filename}.{timestamp}.tmp")
-        final_output = os.path.join(downloads_folder, output_filename)
+        # Use file manager for output path
+        final_output = str(self.file_manager.get_download_path(output_filename))
 
         try:
-            # Remove existing files to avoid conflicts
-            if os.path.exists(temp_output):
-                os.remove(temp_output)
+            # Remove existing file to avoid conflicts
             if os.path.exists(final_output):
                 os.remove(final_output)
 
-            # FIXED: Remove linear=True parameter which is no longer supported
             doc.save(
-                temp_output,
-                garbage=4,  # Remove unused objects
-                deflate=True,  # Always use deflate
-                deflate_images=True,  # Compress images
-                deflate_fonts=True,  # Compress fonts
-                clean=True,  # Clean the document
-                pretty=False,  # Don't pretty-print
-                ascii=False  # Don't convert to ASCII
-                # linear=True removed - no longer supported in PyMuPDF
+                final_output,
+                garbage=4,
+                deflate=True,
+                deflate_images=True,
+                deflate_fonts=True,
+                clean=True,
+                pretty=False,
+                ascii=False
             )
 
             doc.close()
 
-            compressed_size = os.path.getsize(temp_output)
+            compressed_size = os.path.getsize(final_output)
             compression_ratio = (1 - compressed_size / original_size) * 100
-
-            # Only use original if compression made it significantly worse
-            if compressed_size >= original_size * 1.02:  # 2% threshold
-                print(f"\n⚠️  Compression increased file size, using optimized version anyway")
-                print(f"   Original: {original_size / (1024 * 1024):.2f} MB")
-                print(f"   Compressed: {compressed_size / (1024 * 1024):.2f} MB")
-                success = True
-            else:
-                success = True
-
-            # Rename temp to final
-            os.rename(temp_output, final_output)
 
             print("\n" + "=" * 80)
             print(f"✅ Compression complete!")
@@ -322,7 +294,7 @@ class CompressService:
             print("=" * 80)
 
             return {
-                'success': success,
+                'success': True,
                 'original_size': original_size,
                 'compressed_size': compressed_size,
                 'compression_ratio': compression_ratio,

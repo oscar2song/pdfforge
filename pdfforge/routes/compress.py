@@ -50,8 +50,8 @@ def upload_file():
                 400,
             )
 
-        # Save file
-        file_path = save_uploaded_file(file, current_app.config["UPLOAD_FOLDER"])
+        # Save file - UPDATED: Use file manager instead of UPLOAD_FOLDER
+        file_path = save_uploaded_file(file)  # Remove UPLOAD_FOLDER parameter
 
         return jsonify(
             {
@@ -90,7 +90,8 @@ def upload_multiple_files():
 
         for file in files:
             if file and file.filename and allowed_file(file.filename):
-                file_path = save_uploaded_file(file, current_app.config["UPLOAD_FOLDER"])
+                # UPDATED: Use file manager instead of UPLOAD_FOLDER
+                file_path = save_uploaded_file(file)  # Remove UPLOAD_FOLDER parameter
                 uploaded_files.append(
                     {
                         "path": file_path,

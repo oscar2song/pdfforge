@@ -1,18 +1,31 @@
+# pdfforge/utils/file_utils.py (updated)
 """
-File Utility Functions
+File Utility Functions - Updated with File Manager Integration
 """
 
 import logging
 import os
+import zipfile
+from pathlib import Path
 from typing import Dict, List
-
 from werkzeug.utils import secure_filename
 
+# Import the file manager
+from .file_manager import get_file_manager
 
-def save_uploaded_file(file, upload_folder: str) -> str:
-    """Save uploaded file to temporary location."""
+
+def save_uploaded_file(file, upload_folder: str = None) -> str:
+    """Save uploaded file to appropriate location."""
     filename = secure_filename(file.filename)
-    filepath = os.path.join(upload_folder, filename)
+
+    if upload_folder:
+        # Use specified upload folder (backward compatibility)
+        filepath = os.path.join(upload_folder, filename)
+    else:
+        # Use file manager for uploads
+        file_manager = get_file_manager()
+        filepath = str(file_manager.get_upload_path(filename))
+
     file.save(filepath)
     return filepath
 
@@ -23,25 +36,20 @@ def create_output_filename(original_filename: str, suffix: str) -> str:
     return f"{name_without_ext}_{suffix}.pdf"
 
 
-def save_pdf(pdf_bytes, filename: str) -> str:
+def save_pdf(pdf_bytes, filename: str, component: str = "merge") -> str:
     """
-    Save PDF bytes to a file in the downloads folder
+    Save PDF bytes to appropriate download location
 
     Args:
         pdf_bytes: PDF bytes or BytesIO object
         filename: Output filename
+        component: Component type (merge, normalize, compress)
 
     Returns:
         Path to the saved file
     """
-    import os
-
-    # Create downloads folder if it doesn't exist
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    downloads_folder = os.path.join(base_dir, 'downloads')
-    os.makedirs(downloads_folder, exist_ok=True)
-
-    file_path = os.path.join(downloads_folder, filename)
+    file_manager = get_file_manager(component)
+    file_path = file_manager.get_download_path(filename)
 
     try:
         if hasattr(pdf_bytes, 'getbuffer'):
@@ -54,7 +62,7 @@ def save_pdf(pdf_bytes, filename: str) -> str:
                 f.write(pdf_bytes)
 
         logging.info(f"PDF saved to: {file_path}")
-        return file_path
+        return str(file_path)
 
     except Exception as e:
         logging.error(f"Error saving PDF: {str(e)}")
@@ -71,26 +79,20 @@ def cleanup_temp_files(file_paths: List[str]):
             print(f"Warning: Could not remove file {file_path}: {e}")
 
 
-def create_zip_archive(files: List[Dict[str, str]], zip_filename: str) -> str:
+def create_zip_archive(files: List[Dict[str, str]], zip_filename: str, component: str = "merge") -> str:
     """
     Create a zip archive from multiple files
 
     Args:
         files: List of dicts with 'path' and 'filename' keys
         zip_filename: Name for the zip file
+        component: Component type for download location
 
     Returns:
         Path to the created zip file
     """
-    import os
-    import zipfile
-
-    # Create downloads folder in the project root
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    downloads_folder = os.path.join(project_root, 'downloads')
-    os.makedirs(downloads_folder, exist_ok=True)
-
-    zip_path = os.path.join(downloads_folder, zip_filename)
+    file_manager = get_file_manager(component)
+    zip_path = file_manager.get_download_path(zip_filename)
 
     try:
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -114,8 +116,21 @@ def create_zip_archive(files: List[Dict[str, str]], zip_filename: str) -> str:
         else:
             logging.error(f"Zip file was not created: {zip_path}")
 
-        return zip_path
+        return str(zip_path)
 
     except Exception as e:
         logging.error(f"Error creating zip archive: {str(e)}")
         raise
+
+
+# Backward compatibility functions
+def get_downloads_folder() -> str:
+    """Get downloads folder path (backward compatibility)"""
+    file_manager = get_file_manager()
+    return str(file_manager.downloads_dir)
+
+
+def get_uploads_folder() -> str:
+    """Get uploads folder path (backward compatibility)"""
+    file_manager = get_file_manager()
+    return str(file_manager.uploads_dir)

@@ -1,4 +1,4 @@
-// Compress page functionality
+// Compress page functionality - UPDATED
 class CompressManager {
     constructor() {
         this.files = [];
@@ -85,26 +85,11 @@ class CompressManager {
         this.updateUI();
     }
 
-    downloadFile(filePath, filename) {
-        // Show download link
-        const downloadLink = document.getElementById('download-link');
-        const downloadUrl = `/download/${filename}`;
-
-        downloadLink.innerHTML = `
-        <div class="success-message">
-            <p>Processing complete! Your file is ready for download.</p>
-            <a href="${downloadUrl}" class="btn btn-primary" 
-               onclick="cleanupAfterDownload('${filename}')">
-                Download ${filename}
-            </a>
-        </div>
-    `;
-    }
-
+    // UPDATED: Fixed cleanup function for compress component
     cleanupAfterDownload(filename) {
         // Wait a bit then cleanup the file
         setTimeout(() => {
-            fetch(`/cleanup/normalize/${filename}`, {method: 'POST'})
+            fetch(`/cleanup/compress/${filename}`, {method: 'POST'})
                 .then(response => response.json())
                 .then(data => {
                     console.log('Cleanup result:', data);
@@ -166,6 +151,10 @@ class CompressManager {
 
             if (result.success) {
                 this.showResult(result);
+                // UPDATED: Add cleanup to download link
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.onclick = () => this.cleanupAfterDownload(result.output_filename);
+
                 const action = this.files.length > 1 ? 'Files compressed' : 'File compressed';
                 notifications.success(`${action} successfully!`);
             } else {
@@ -182,8 +171,9 @@ class CompressManager {
     getOptions() {
         return {
             compression_level: document.getElementById('compressionLevel').value,
-            image_quality: parseInt(document.getElementById('imageQuality').value) || 75, // Changed default to 75
-            target_dpi: parseInt(document.getElementById('targetDPI').value) || 150,
+            // UPDATED: Match backend compression level settings exactly
+            image_quality: parseInt(document.getElementById('imageQuality').value) || 85, // Default to medium
+            target_dpi: parseInt(document.getElementById('targetDPI').value) || 150, // Default to medium
             downsample_images: document.getElementById('downsampleImages').checked
         };
     }
@@ -212,11 +202,11 @@ class CompressManager {
         const qualityInput = document.getElementById('imageQuality');
         const dpiInput = document.getElementById('targetDPI');
 
-        // Set values based on compression level - UPDATED VALUES
+        // UPDATED: Match exact values from backend routes
         const presets = {
-            low: {quality: 90, dpi: 200},
-            medium: {quality: 75, dpi: 150},
-            high: {quality: 60, dpi: 120}
+            low: {quality: 95, dpi: 200},      // Matches backend exactly
+            medium: {quality: 85, dpi: 150},   // Matches backend exactly
+            high: {quality: 75, dpi: 120}      // Matches backend exactly
         };
 
         if (presets[level]) {
@@ -236,9 +226,9 @@ class CompressManager {
 
         // Determine compression level based on overall score
         let level = 'medium';
-        if (overallScore >= 0.7) { // High quality + high DPI
+        if (overallScore >= 0.8) { // High quality + high DPI
             level = 'low';
-        } else if (overallScore <= 0.4) { // Low quality + low DPI
+        } else if (overallScore <= 0.6) { // Low quality + low DPI
             level = 'high';
         }
 
@@ -291,6 +281,9 @@ class CompressManager {
 
         downloadLink.href = result.download_url;
         downloadLink.textContent = `Download ${result.output_filename}`;
+
+        // Add cleanup handler
+        downloadLink.onclick = () => this.cleanupAfterDownload(result.output_filename);
 
         resultSection.style.display = 'block';
         resultSection.scrollIntoView({behavior: 'smooth'});
