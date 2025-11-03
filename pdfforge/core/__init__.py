@@ -1,0 +1,3 @@
+"""
+Core PDF processing functionality
+"""
