@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero">
+    <h1>PDFForge</h1>
+    <p class="subtitle">Professional PDF Processing Tools</p>
+    <p class="description">Merge, normalize, and compress PDF files with advanced features including OCR, smart page numbers, and bookmarks.</p>
+</div>
+
+<div class="tools-grid">
+    <div class="tool-card">
+        <h3>Merge PDFs</h3>
+        <p>Combine multiple PDF files into one document with headers, page numbers, and bookmarks.</p>
+        <ul class="feature-list">
+            <li>Smart page numbering</li>
+            <li>Automatic bookmarks</li>
+            <li>Custom headers</li>
+            <li>Smart spacing</li>
+        </ul>
+        <a href="{{ url_for('main.merge_page') }}" class="btn btn-primary">Merge PDFs</a>
+    </div>
+
+    <div class="tool-card">
+        <h3>Normalize PDFs</h3>
+        <p>Standardize page sizes, add OCR text layers, and optimize document structure.</p>
+        <ul class="feature-list">
+            <li>Multiple page sizes</li>
+            <li>OCR text recognition</li>
+            <li>Rotation correction</li>
+            <li>Header/footer space</li>
+        </ul>
+        <a href="{{ url_for('main.normalize_page') }}" class="btn btn-primary">Normalize PDFs</a>
+    </div>
+
+    <div class="tool-card">
+        <h3>Compress PDFs</h3>
+        <p>Reduce file size while maintaining quality with smart compression algorithms.</p>
+        <ul class="feature-list">
+            <li>Smart compression</li>
+            <li>Image optimization</li>
+            <li>Batch processing</li>
+            <li>Quality preservation</li>
+        </ul>
+        <a href="{{ url_for('main.compress_page') }}" class="btn btn-primary">Compress PDFs</a>
+    </div>
+</div>
+
+<div class="features-section">
+    <h2>Advanced Features</h2>
+    <div class="features-grid">
+        <div class="feature">
+            <h4>OCR Integration</h4>
+            <p>Add searchable text layers to scanned documents using advanced OCR technology.</p>
+        </div>
+        <div class="feature">
+            <h4>Smart Processing</h4>
+            <p>Intelligent algorithms that adapt to your document's content and layout.</p>
+        </div>
+        <div class="feature">
+            <h4>Batch Operations</h4>
+            <p>Process multiple files simultaneously with zip archive downloads.</p>
+        </div>
+        <div class="feature">
+            <h4>Quality Preservation</h4>
+            <p>Maintain document quality while optimizing file size and structure.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
