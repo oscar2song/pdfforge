@@ -374,6 +374,6 @@ We'd love to hear your feedback on v2.0! Please:
 
 Made with ❤️ by the PDFForge Team
 
-**Version**: 2.0.0  
+**Version**: 2.1.0  
 **Release Date**: November 3, 2025
 **Status**: ✅ Stable Release

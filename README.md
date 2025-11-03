@@ -462,7 +462,7 @@ Special thanks to all contributors and users of PDFForge!
 
 ## 📈 Project Stats
 
-- **Current Version**: 2.0.0
+- **Current Version**: 2.1.0
 - **Total Features**: 3 main tools, 15+ options
 - **Architecture**: Modular (from 1800+ line monolith)
 - **Python Version**: 3.11+
@@ -472,7 +472,7 @@ Special thanks to all contributors and users of PDFForge!
 
 ## 📝 Changelog
 
-### v2.1 (Planned)
+### v2.2 (Planned)
 - Enhance TOC
 - PDF split
 - REST API endpoints
@@ -480,7 +480,7 @@ Special thanks to all contributors and users of PDFForge!
 - Rate limiting
 - Batch operations
 
-### Version 2.0.0 (Current - November 2025)
+### Version 2.1.0 (Current - November 2025)
 - 🏗️ **Major Restructure**: Modular architecture with clean separation of concerns
 - 📦 **Package Structure**: Organized into core, services, routes, models, utils
 - 🧪 **Testing**: Comprehensive test suite with 80%+ coverage
