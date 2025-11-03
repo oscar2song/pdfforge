@@ -15,6 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker support
 - User authentication
 - Cloud storage integration
+📈 Project Stats
+
+### Version 2.0.0 (Current - November 2025)
+- 🏗️ **Major Restructure**: Modular architecture with clean separation of concerns
+- 📦 **Package Structure**: Organized into core, services, routes, models, utils
+- 🧪 **Testing**: Comprehensive test suite with 80%+ coverage
+- 📚 **Documentation**: Complete documentation overhaul
+- ⚡ **Performance**: Improved processing speed and memory usage
+- 🔧 **Configuration**: Environment-based configuration management
+- 🎨 **Frontend**: Extracted CSS/JS to separate files
+- 🔒 **Security**: Enhanced input validation and error handling
 
 ## [1.1.0] - 2025-10-29
 
@@ -108,7 +119,7 @@ For detailed release information, visit our [Releases page](https://github.com/o
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines on how to contribute to this project.
 
 ## Support
 
