@@ -52,12 +52,20 @@ class PDFMerger:
         Pass 2: Add TOC with Roman numerals and working links
         """
         output_pdf = fitz.open()
-        source_pdfs = []  # Keep track of all opened source PDFs
+        source_pdfs = []
+
+        # Get target page dimensions from options
+        page_width, page_height = self.options.get_page_dimensions()
+
+        # Auto-detect page size if requested
+        if self.options.target_page_size == "auto" and files:
+            page_width, page_height = self._detect_common_page_size(files)
 
         try:
             print("=" * 80)
             print("PDF MERGE - TWO-PASS APPROACH WITH SEPARATE PAGINATION")
             print("=" * 80)
+            print(f"Target page size: {page_width:.0f} x {page_height:.0f} pts")
             print(f"Add headers: {self.options.add_headers}")
             print(f"Add bookmarks: {self.options.add_bookmarks}")
             print(f"Add table of contents: {self.options.add_toc}")
@@ -69,9 +77,9 @@ class PDFMerger:
             # === PASS 1: CREATE ALL CONTENT PAGES ===
             print("=== PASS 1: Creating Content Pages ===")
 
-            content_pages_info: List[Dict[str, Any]] = []  # Store info about each content page
-            file_info: List[Dict[str, Any]] = []  # For bookmarks  # For bookmarks
-            current_content_page_index = 0  # 0-based index in output PDF
+            content_pages_info: List[Dict[str, Any]] = []
+            file_info: List[Dict[str, Any]] = []
+            current_content_page_index = 0
 
             # First, create all content pages without TOC
             for idx, pdf_file in enumerate(files):
@@ -85,13 +93,11 @@ class PDFMerger:
                 source_pdfs.append(source_pdf)
                 page_count = len(source_pdf)
 
-                # Store starting position for this file
                 file_start_index = current_content_page_index
 
                 print(f"Processing PDF {idx + 1}: {pdf_file.name} ({page_count} pages)")
                 print(f"  - Start position in output: {file_start_index} (0-indexed)")
 
-                # Process each page and store information
                 for page_num in range(page_count):
                     page_info = {
                         "source_pdf": source_pdf,
@@ -109,6 +115,8 @@ class PDFMerger:
                             page_num,
                             pdf_file,
                             page_info["content_page_number"],
+                            page_width,  # ← ADDED
+                            page_height,  # ← ADDED
                         )
                     else:
                         self._copy_page_directly(
@@ -116,20 +124,27 @@ class PDFMerger:
                             source_pdf,
                             page_num,
                             page_info["content_page_number"],
+                            page_width,  # ← ADDED
+                            page_height,  # ← ADDED
                         )
 
                     content_pages_info.append(page_info)
                     current_content_page_index += 1
 
-                # Store file info for bookmarks
                 file_info.append({"name": pdf_file.name, "start_page": file_start_index, "page_count": page_count})
 
             # === PASS 2: ADD TOC WITH ROMAN NUMERALS AND WORKING LINKS ===
-            print("\n=== PASS 2: Adding TOC with Roman Numerals ===")
+            print(f"\n=== PASS 2: Adding TOC with Roman Numerals ===")
 
             toc_page_count = 0
             if self.options.add_toc and len(files) > 1:
-                toc_page_count = self._create_toc_with_links(output_pdf, files, content_pages_info)
+                toc_page_count = self._create_toc_with_links(
+                    output_pdf,
+                    files,
+                    content_pages_info,
+                    page_width,  # ← ADDED
+                    page_height  # ← ADDED
+                )
                 print(f"✓ Added {toc_page_count} TOC page(s) with Roman numerals")
 
             # === UPDATE PAGE NUMBERS WITH SEPARATE PAGINATION ===
@@ -140,7 +155,6 @@ class PDFMerger:
             if self.options.add_bookmarks and len(file_info) > 1:
                 print(f"\nCreating bookmarks for {len(file_info)} files:")
                 for info in file_info:
-                    # Bookmark points to content pages (Arabic numbering)
                     bookmark_target = info["start_page"] + 1 + toc_page_count
                     print(f"  - '{info['name']}' -> page {bookmark_target}")
 
@@ -155,7 +169,7 @@ class PDFMerger:
             print(f"✓ Output PDF has {len(output_pdf)} total pages")
             if self.options.add_toc:
                 print(f"✓ Table of Contents: {toc_page_count} page(s) (Roman numerals)")
-                print(f"✓ Content pages: {len(content_pages_info)} pages (Arabic numerals 1-{len(content_pages_info)})")
+                print(f"✓ Content pages: {len(content_pages_info)} pages (Arabic numerals)")
                 print("✓ TOC links are fully functional")
             print("=" * 80)
 
@@ -164,7 +178,7 @@ class PDFMerger:
         except Exception as e:
             try:
                 output_pdf.close()
-            except (AttributeError, OSError, ValueError):  # Catch specific exceptions that close() might raise
+            except (AttributeError, OSError, ValueError):
                 pass
             raise PDFMergeError(f"Failed to merge PDFs: {str(e)}")
         finally:
@@ -174,15 +188,53 @@ class PDFMerger:
                 except (AttributeError, OSError, ValueError):
                     pass
 
+    def _detect_common_page_size(self, files: List[PDFFile]) -> tuple[float, float]:
+        """
+        Auto-detect the most common page size from source files
+        Returns: (width, height) in points
+        """
+        from collections import Counter
+
+        page_sizes = []
+
+        for pdf_file in files[:5]:  # Check first 5 files
+            if not os.path.exists(pdf_file.path):
+                continue
+            try:
+                doc = fitz.open(pdf_file.path)
+                if len(doc) > 0:
+                    rect = doc[0].rect
+                    # Round to nearest 10 to group similar sizes
+                    width = round(rect.width / 10) * 10
+                    height = round(rect.height / 10) * 10
+                    page_sizes.append((width, height))
+                doc.close()
+            except:
+                continue
+
+        if page_sizes:
+            # Return most common page size
+            most_common = Counter(page_sizes).most_common(1)[0][0]
+            print(f"📐 Auto-detected page size: {most_common[0]:.0f} x {most_common[1]:.0f} pts")
+            return most_common
+
+        # Default to letter size
+        return (612, 792)
+
     def _create_toc_with_links(
-        self, output_pdf: fitz.Document, files: List[PDFFile], content_pages_info: List[Dict]
+            self,
+            output_pdf: fitz.Document,
+            files: List[PDFFile],
+            content_pages_info: List[Dict],
+            page_width: float,
+            page_height: float
     ) -> int:
+        """Create TOC with Roman numerals - DYNAMIC PAGE SIZE"""
+        toc_page = output_pdf.new_page(0, width=page_width, height=page_height)
         """
         Create TOC with Roman numerals and working links to content pages
         Returns number of TOC pages created
         """
-        # Insert TOC page at the beginning
-        toc_page = output_pdf.new_page(0, width=612, height=792)
         toc_pages = [toc_page]
 
         # Calculate content page starts for each file
@@ -387,26 +439,32 @@ class PDFMerger:
             pass  # If clearing fails, continue anyway
 
     def _process_page_with_headers(
-        self,
-        output_pdf: fitz.Document,
-        source_pdf: fitz.Document,
-        page_num: int,
-        pdf_file: PDFFile,
-        page_number: int,
+            self,
+            output_pdf: fitz.Document,
+            source_pdf: fitz.Document,
+            page_num: int,
+            pdf_file: PDFFile,
+            page_number: int,
+            page_width: float,
+            page_height: float,
     ):
-        """Process and add page with headers (without page numbers initially)"""
-        new_page = output_pdf.new_page(-1, width=612, height=792)
+        """Process and add page with headers - ADJUSTED SPACING"""
+        new_page = output_pdf.new_page(-1, width=page_width, height=page_height)
 
         src_page = source_pdf[page_num]
         src_rect = src_page.rect
 
-        # Calculate scaling
-        margin = 30
-        header_space = 50
-        footer_space = 15 if self.options.add_footer_line else 5
+        # Margins
+        margin = min(25, page_width * 0.04)
+        header_space = 48  # Increased: 43 (separator) + 5 (gap)
+        footer_space = 20
 
-        available_width = 612 - 2 * margin
-        available_height = 792 - header_space - footer_space
+        has_headers = bool(pdf_file.header_line1 or pdf_file.header_line2)
+        if not has_headers:
+            header_space = 15
+
+        available_width = page_width - 2 * margin
+        available_height = page_height - header_space - footer_space
 
         scale_x = available_width / src_rect.width
         scale_y = available_height / src_rect.height
@@ -415,8 +473,12 @@ class PDFMerger:
         scaled_width = src_rect.width * scale
         scaled_height = src_rect.height * scale
 
-        x_offset = (612 - scaled_width) / 2
-        y_offset = header_space + (available_height - scaled_height) / 2
+        x_offset = (page_width - scaled_width) / 2
+        y_offset = header_space  # Content starts at 48px
+
+        extra_vertical_space = available_height - scaled_height
+        if extra_vertical_space > 50:
+            y_offset = header_space + (extra_vertical_space / 2)
 
         target_rect = fitz.Rect(
             x_offset,
@@ -425,53 +487,83 @@ class PDFMerger:
             y_offset + scaled_height,
         )
 
-        # Insert source page content
         new_page.show_pdf_page(target_rect, source_pdf, page_num)
 
-        # Add headers but NOT page numbers (added later in separate pagination)
-        self._add_header_without_page_number(new_page, pdf_file)
+        if has_headers:
+            self._add_header_without_page_number(new_page, pdf_file)
 
     def _add_header_without_page_number(self, page: fitz.Page, pdf_file: PDFFile):
-        """Add headers without page numbers"""
+        """Add headers without page numbers - INCREASED TOP SPACING"""
         header_notes = [pdf_file.header_line1, pdf_file.header_line2]
         page_width = page.rect.width
 
-        margin = 30
-        font_size = 10
+        margin = min(25, page_width * 0.04)
+        font_size = 9
+
+        # Header positioning - MORE SPACE AT TOP
+        header_y_start = 20  # Increased from 15 to 20
+        line_height = 10
 
         # Add header text
-        header_y = 25
-        line_height = 12
-
         if header_notes[0]:
             ProjectFontManager.insert_text_with_font(
-                page, (margin, header_y), header_notes[0], fontsize=font_size, variant="regular"
+                page, (margin, header_y_start), header_notes[0], fontsize=font_size, variant="regular"
             )
 
         if header_notes[1]:
             ProjectFontManager.insert_text_with_font(
-                page, (margin, header_y + line_height), header_notes[1], fontsize=font_size, variant="regular"
+                page, (margin, header_y_start + line_height), header_notes[1], fontsize=font_size, variant="regular"
             )
 
-        # Add header separator only if headers are present
+        # Add header separator - MORE MARGIN FROM HEADER TEXT
         if header_notes[0] or header_notes[1]:
-            header_line_y = 45
+            # Separator at 43px: gives space after header text (30px + 13px gap)
+            separator_y = 43
             page.draw_line(
-                (margin, header_line_y),
-                (page_width - margin, header_line_y),
+                (margin, separator_y),
+                (page_width - margin, separator_y),
                 width=0.5,
+                color=(0.7, 0.7, 0.7),
             )
 
     def _copy_page_directly(
-        self,
-        output_pdf: fitz.Document,
-        source_pdf: fitz.Document,
-        page_num: int,
-        page_number: int,
+            self,
+            output_pdf: fitz.Document,
+            source_pdf: fitz.Document,
+            page_num: int,
+            page_number: int,
+            page_width: float,
+            page_height: float,
     ):
-        """Copy page without modifications (page numbers added later)"""
-        output_pdf.insert_pdf(source_pdf, from_page=page_num, to_page=page_num)
-        # Page numbers will be added in separate pagination phase
+        """Copy page without modifications - DYNAMIC PAGE SIZE"""
+        new_page = output_pdf.new_page(-1, width=page_width, height=page_height)
+        src_page = source_pdf[page_num]
+        src_rect = src_page.rect
+
+        margin = min(20, page_width * 0.03)
+        footer_space = 20
+
+        available_width = page_width - 2 * margin
+        available_height = page_height - margin - footer_space
+
+        scale_x = available_width / src_rect.width
+        scale_y = available_height / src_rect.height
+        scale = min(scale_x, scale_y, self.options.scale_factor)
+
+        scaled_width = src_rect.width * scale
+        scaled_height = src_rect.height * scale
+
+        x_offset = (page_width - scaled_width) / 2
+        y_offset = margin
+
+        target_rect = fitz.Rect(
+            x_offset,
+            y_offset,
+            x_offset + scaled_width,
+            y_offset + scaled_height,
+        )
+
+        new_page.show_pdf_page(target_rect, source_pdf, page_num)
 
     def _add_header_footer(self, page: fitz.Page, pdf_file: PDFFile, page_number: int):
         """Legacy method - not used in two-pass approach"""
@@ -480,8 +572,8 @@ class PDFMerger:
     def _add_page_number_only(self, page: fitz.Page, page_number: int):
         """Add only page number with smart positioning"""
         page_text = f"{page_number}"
-        page_width = page.rect.width
-        page_height = page.rect.height
+        page_width = page.rect.width  # Use actual page dimensions
+        page_height = page.rect.height  # Use actual page dimensions
 
         # Get safe position
         safe_position = get_safe_page_number_position(
