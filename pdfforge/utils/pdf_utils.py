@@ -132,15 +132,51 @@ def has_text_layer(page):
 
 
 def detect_pdf_type(page):
-    """Detect if PDF page is image-based or text-based"""
+    """
+    Detect if PDF page is image-based or text-based.
+
+    Uses a 150-character threshold to distinguish between:
+    - Pure scanned images (0 chars)
+    - Scanned images with OCR artifacts (<150 chars)
+    - True text documents (≥150 chars)
+
+    This prevents OCR noise from misclassifying scanned images as text documents.
+
+    Returns:
+        dict: Contains type classification and detailed metrics
+            - has_text: bool - whether page has any extractable text
+            - has_images: bool - whether page contains images
+            - text_length: int - number of characters in extracted text
+            - image_count: int - number of images found
+            - is_image_based: bool - True if primarily image-based
+            - type: str - "image" or "text"
+    """
     text = page.get_text().strip()
     images = page.get_images()
+    text_length = len(text)
+    image_count = len(images)
+
+    # Enhanced detection logic with 150-character threshold
+    # This better distinguishes between scanned images with OCR artifacts and real text
+    if text_length < 150 and image_count > 0:
+        # Scanned image (pure or with minimal OCR text)
+        pdf_type = "image"
+        is_image_based = True
+    elif text_length >= 150:
+        # Substantial text content = text document
+        pdf_type = "text"
+        is_image_based = False
+    else:
+        # Edge case: no images and minimal text
+        # Treat as text document (safer default)
+        pdf_type = "text"
+        is_image_based = False
 
     return {
-        "has_text": len(text) > 0,
-        "has_images": len(images) > 0,
-        "text_length": len(text),
-        "image_count": len(images),
-        "is_image_based": len(images) > 0 and len(text) < 50,  # ← ADD THIS FIELD
-        "type": "image" if (len(images) > 0 and len(text) < 50) else "text",
+        "has_text": text_length > 0,
+        "has_images": image_count > 0,
+        "text_length": text_length,
+        "image_count": image_count,
+        "is_image_based": is_image_based,
+        "type": pdf_type,
     }

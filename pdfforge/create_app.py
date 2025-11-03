@@ -7,6 +7,7 @@ import os
 
 from flask import Flask
 
+
 def create_app(config_class=None):
     """
     Application factory function
@@ -60,12 +61,12 @@ def init_extensions(app):
 
 def register_blueprints(app):
     """Register Flask blueprints"""
+    from .routes.cleanup import cleanup_bp
     from .routes.compress import compress_bp
     from .routes.download import download_bp  # Add this import
     from .routes.main import main_bp
     from .routes.merge import merge_bp
     from .routes.normalize import normalize_bp
-    from .routes.cleanup import cleanup_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(merge_bp)

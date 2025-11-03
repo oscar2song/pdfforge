@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 
 @dataclass
@@ -58,3 +58,23 @@ class MergeOptions:
         if self.target_orientation == "landscape":
             return (size[1], size[0])  # Swap width and height
         return size
+
+    def validate(self):
+        """Validate options"""
+        if self.page_start < 1:
+            raise ValueError("page_start must be >= 1")
+
+        if not 0 < self.scale_factor <= 1:
+            raise ValueError("scale_factor must be between 0 and 1")
+
+        valid_positions = [
+            "top-center",
+            "bottom-center",
+            "top-right",
+            "bottom-right",
+        ]
+        if self.page_number_position not in valid_positions:
+            raise ValueError(f"Invalid page_number_position: {self.page_number_position}")
+
+        if self.page_number_font_size < 6 or self.page_number_font_size > 72:
+            raise ValueError("page_number_font_size must be between 6 and 72")

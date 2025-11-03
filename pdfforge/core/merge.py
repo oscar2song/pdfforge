@@ -13,6 +13,7 @@ from ..models.merge_options import MergeOptions
 from ..models.pdf_file import PDFFile
 from ..utils.font_utils import ProjectFontManager
 from ..utils.ocr_utils import get_safe_page_number_position
+from ..utils.pdf_utils import detect_pdf_type
 
 
 def create_bookmarks(pdf_doc, file_info: List[Dict[str, Any]], toc_page_count: int = 0):
@@ -134,16 +135,12 @@ class PDFMerger:
                 file_info.append({"name": pdf_file.name, "start_page": file_start_index, "page_count": page_count})
 
             # === PASS 2: ADD TOC WITH ROMAN NUMERALS AND WORKING LINKS ===
-            print(f"\n=== PASS 2: Adding TOC with Roman Numerals ===")
+            print("\n=== PASS 2: Adding TOC with Roman Numerals ===")
 
             toc_page_count = 0
             if self.options.add_toc and len(files) > 1:
                 toc_page_count = self._create_toc_with_links(
-                    output_pdf,
-                    files,
-                    content_pages_info,
-                    page_width,  # ← ADDED
-                    page_height  # ← ADDED
+                    output_pdf, files, content_pages_info, page_width, page_height  # ← ADDED  # ← ADDED
                 )
                 print(f"✓ Added {toc_page_count} TOC page(s) with Roman numerals")
 
@@ -209,7 +206,7 @@ class PDFMerger:
                     height = round(rect.height / 10) * 10
                     page_sizes.append((width, height))
                 doc.close()
-            except:
+            except (AttributeError, OSError, ValueError):
                 continue
 
         if page_sizes:
@@ -222,12 +219,12 @@ class PDFMerger:
         return (612, 792)
 
     def _create_toc_with_links(
-            self,
-            output_pdf: fitz.Document,
-            files: List[PDFFile],
-            content_pages_info: List[Dict],
-            page_width: float,
-            page_height: float
+        self,
+        output_pdf: fitz.Document,
+        files: List[PDFFile],
+        content_pages_info: List[Dict],
+        page_width: float,
+        page_height: float,
     ) -> int:
         """Create TOC with Roman numerals - DYNAMIC PAGE SIZE"""
         toc_page = output_pdf.new_page(0, width=page_width, height=page_height)
@@ -439,14 +436,14 @@ class PDFMerger:
             pass  # If clearing fails, continue anyway
 
     def _process_page_with_headers(
-            self,
-            output_pdf: fitz.Document,
-            source_pdf: fitz.Document,
-            page_num: int,
-            pdf_file: PDFFile,
-            page_number: int,
-            page_width: float,
-            page_height: float,
+        self,
+        output_pdf: fitz.Document,
+        source_pdf: fitz.Document,
+        page_num: int,
+        pdf_file: PDFFile,
+        page_number: int,
+        page_width: float,
+        page_height: float,
     ):
         """Process and add page with headers - ADJUSTED SPACING"""
         new_page = output_pdf.new_page(-1, width=page_width, height=page_height)
@@ -456,12 +453,22 @@ class PDFMerger:
 
         # Margins
         margin = min(25, page_width * 0.04)
-        header_space = 48  # Increased: 43 (separator) + 5 (gap)
         footer_space = 20
 
+        # Detect PDF type and apply appropriate spacing
+        pdf_type_info = detect_pdf_type(src_page)
+        pdf_type = pdf_type_info["type"]
+        # print(f"found pdf_type: {pdf_type}")
         has_headers = bool(pdf_file.header_line1 or pdf_file.header_line2)
+
         if not has_headers:
             header_space = 15
+        elif pdf_type == "image":
+            # Scanned image PDFs: tight spacing to maximize visible area
+            header_space = 43  # Content starts immediately after separator at 43px
+        else:
+            # Scanned text PDFs: also use tight spacing to be close to separator
+            header_space = 10  # Content starts immediately after separator at 43px
 
         available_width = page_width - 2 * margin
         available_height = page_height - header_space - footer_space
@@ -474,10 +481,10 @@ class PDFMerger:
         scaled_height = src_rect.height * scale
 
         x_offset = (page_width - scaled_width) / 2
-        y_offset = header_space  # Content starts at 48px
+        y_offset = header_space  # Content starts based on PDF type detection
 
         extra_vertical_space = available_height - scaled_height
-        if extra_vertical_space > 50:
+        if extra_vertical_space > 50 and pdf_type == "image":
             y_offset = header_space + (extra_vertical_space / 2)
 
         target_rect = fitz.Rect(
@@ -527,13 +534,13 @@ class PDFMerger:
             )
 
     def _copy_page_directly(
-            self,
-            output_pdf: fitz.Document,
-            source_pdf: fitz.Document,
-            page_num: int,
-            page_number: int,
-            page_width: float,
-            page_height: float,
+        self,
+        output_pdf: fitz.Document,
+        source_pdf: fitz.Document,
+        page_num: int,
+        page_number: int,
+        page_width: float,
+        page_height: float,
     ):
         """Copy page without modifications - DYNAMIC PAGE SIZE"""
         new_page = output_pdf.new_page(-1, width=page_width, height=page_height)
