@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 download_bp = Blueprint("download", __name__)
 
+
 def find_file_anywhere(filename: str):
     """
     Search for file in all possible locations with priority:
@@ -32,7 +33,6 @@ def find_file_anywhere(filename: str):
     for component in components:
         file_manager = get_file_manager(component)
         # Get the downloads directory for this component
-        downloads_dir = file_manager.downloads_dir
         component_download_dir = file_manager.get_component_dir()  # This will be downloads/toc/
         file_path = component_download_dir / filename
         if file_path.exists():
@@ -54,6 +54,7 @@ def find_file_anywhere(filename: str):
         return file_path
 
     return None
+
 
 def find_file_by_id(file_id: str, component: str | None = None):
     """

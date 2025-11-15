@@ -207,6 +207,13 @@ This release represents a complete rewrite of PDFForge with a modern, modular ar
 
 ### Added
 - Navigation: “TOC Manager” added to the top menu for quick access (`pdfforge/templates/base.html`).
+- CI/CD: Manual Release workflow with safety checks (`.github/workflows/release.yml`).
+  - Requires `tag` input and `confirm=YES` to proceed
+  - Validates SemVer tag format and verifies the tag exists
+  - Runs smoke tests with `pytest -q` before releasing
+  - Idempotency guard: skips if a Release for the tag already exists
+  - Draft by default; `prerelease` auto-detected if tag contains `-`
+- Docs: New Releasing guide `docs/RELEASING.md` and README “Releasing” section summarizing the flow.
 
 ### Changed
 - Homepage: Removed links and UI for the deprecated “Enhanced Merge with TOC” and consolidated to the standard Merge flow (`main.merge_page`).

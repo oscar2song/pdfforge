@@ -4,15 +4,17 @@ Generates professional table of contents from PDF bookmarks
 Enhanced version with multi-page support and better error handling
 """
 
-import fitz  # PyMuPDF
-from typing import List, Dict, Tuple, Optional
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
+import fitz  # PyMuPDF
 
 
 @dataclass
 class TOCStyle:
     """Configuration for TOC appearance."""
+
     font_name: str = "helv"  # Arial/Helvetica regular
     font_size: int = 12
     title: str = "Table of Contents"
@@ -26,9 +28,9 @@ class TOCStyle:
     margin_right: int = 50  # Match merge.py (right edge at 562 for 612pt width)
     margin_bottom: int = 72
     # Separator line boundaries (matching merge.py)
-    separator_left: int = 50
-    separator_right: int = 562  # For 612pt width pages
-    page_number_x: int = 500  # Match merge.py
+    separator_left: float = 50.0
+    separator_right: float = 562.0  # For 612pt width pages
+    page_number_x: float = 500.0  # Match merge.py
     # NEW: Page number position for TOC pages
     page_number_position: str = "bottom-center"  # "top-center", "bottom-center", "top-right", "bottom-right"
     page_number_font_size: int = 11
@@ -37,6 +39,7 @@ class TOCStyle:
 @dataclass
 class BookmarkEntry:
     """Represents a single bookmark entry."""
+
     title: str
     page: int  # This should be the USER page number (content starts at 1)
     level: int = 0
@@ -87,7 +90,7 @@ class TOCGenerator:
                 print("Warning: get_toc() returned a callable, trying to call it")
                 try:
                     toc = toc()
-                except:
+                except Exception:
                     print("Failed to call get_toc() as function")
                     return []
 
@@ -97,11 +100,7 @@ class TOCGenerator:
                     title = item[1]
                     page = item[2] - 1  # Convert to 1-based for user display
 
-                    bookmarks.append(BookmarkEntry(
-                        title=title,
-                        page=page,  # 1-based for UI
-                        level=level
-                    ))
+                    bookmarks.append(BookmarkEntry(title=title, page=page, level=level))  # 1-based for UI
                     print(f"Extracted bookmark: '{title}' -> page {page} (level {level})")
 
             print(f"Extracted {len(bookmarks)} bookmarks from PDF")
@@ -110,16 +109,17 @@ class TOCGenerator:
         except Exception as e:
             print(f"Error in extract_bookmarks: {e}")
             import traceback
+
             traceback.print_exc()
             return []
 
     def generate_toc(
-            self,
-            pdf_doc: fitz.Document,
-            bookmarks: Optional[List[BookmarkEntry]] = None,
-            insert_at_beginning: bool = True,
-            page_width: float = 612,
-            page_height: float = 792
+        self,
+        pdf_doc: fitz.Document,
+        bookmarks: Optional[List[BookmarkEntry]] = None,
+        insert_at_beginning: bool = True,
+        page_width: float = 612,
+        page_height: float = 792,
     ) -> List[fitz.Page]:
         """
         Generate TOC pages from bookmarks.
@@ -147,12 +147,12 @@ class TOCGenerator:
         return toc_pages
 
     def _create_toc_pages(
-            self,
-            pdf_doc: fitz.Document,
-            bookmarks: List[BookmarkEntry],
-            insert_at_beginning: bool,
-            page_width: float = 612,
-            page_height: float = 792
+        self,
+        pdf_doc: fitz.Document,
+        bookmarks: List[BookmarkEntry],
+        insert_at_beginning: bool,
+        page_width: float = 612,
+        page_height: float = 792,
     ) -> List[fitz.Page]:
         """Create all necessary TOC pages with specified dimensions."""
         toc_pages = []
@@ -189,11 +189,11 @@ class TOCGenerator:
             toc_page = pdf_doc.new_page(
                 pno=insert_position + page_num,
                 width=page_width,  # Use dynamic width
-                height=page_height  # Use dynamic height
+                height=page_height,  # Use dynamic height
             )
 
             # Draw TOC content with link support
-            is_first_page = (page_num == 0)
+            is_first_page = page_num == 0
             self._draw_toc(toc_page, page_bookmarks, is_first_page, page_num + 1, len(bookmark_pages), num_toc_pages)
 
             toc_pages.append(toc_page)
@@ -201,16 +201,16 @@ class TOCGenerator:
         return toc_pages
 
     def _draw_toc(
-            self,
-            page: fitz.Page,
-            bookmarks: List[BookmarkEntry],
-            show_title: bool = True,
-            page_num: int = 1,
-            total_pages: int = 1,
-            num_toc_pages: int = 1
+        self,
+        page: fitz.Page,
+        bookmarks: List[BookmarkEntry],
+        show_title: bool = True,
+        page_num: int = 1,
+        total_pages: int = 1,
+        num_toc_pages: int = 1,
     ):
         """Draw TOC content on page with clickable links."""
-        y_position = self.style.margin_top
+        y_position: float = float(self.style.margin_top)
 
         # Draw title only on first page
         if show_title:
@@ -229,11 +229,7 @@ class TOCGenerator:
     def _draw_title(self, page: fitz.Page, y_position: float) -> float:
         """Draw TOC title with separator line matching merge.py."""
         # Calculate center position for title
-        title_width = fitz.get_text_length(
-            self.style.title,
-            fontname="helv",
-            fontsize=self.style.title_font_size
-        )
+        title_width = fitz.get_text_length(self.style.title, fontname="helv", fontsize=self.style.title_font_size)
         title_x = (page.rect.width - title_width) / 2
 
         # Insert title text - centered
@@ -242,7 +238,7 @@ class TOCGenerator:
             self.style.title,
             fontsize=self.style.title_font_size,
             fontname="helv",
-            color=(0, 0, 0)
+            color=(0, 0, 0),
         )
 
         # Draw separator line under title
@@ -253,18 +249,12 @@ class TOCGenerator:
             fitz.Point(self.style.separator_left, separator_y),
             fitz.Point(self.style.separator_right, separator_y),
             width=1,
-            color=(0, 0, 0)
+            color=(0, 0, 0),
         )
 
         return separator_y  # Return position after separator line
 
-    def _draw_continuation_header(
-            self,
-            page: fitz.Page,
-            y_position: float,
-            page_num: int,
-            total_pages: int
-    ) -> float:
+    def _draw_continuation_header(self, page: fitz.Page, y_position: float, page_num: int, total_pages: int) -> float:
         """Draw continuation header for multi-page TOC."""
         header_text = f"{self.style.title} (continued) - Page {page_num} of {total_pages}"
 
@@ -278,17 +268,13 @@ class TOCGenerator:
             header_text,
             fontsize=self.style.font_size,
             fontname="helv",
-            color=(0, 0, 0)
+            color=(0, 0, 0),
         )
 
         return y_position + self.style.font_size + 10
 
     def _draw_bookmark_entry(
-            self,
-            page: fitz.Page,
-            bookmark: BookmarkEntry,
-            y_position: float,
-            num_toc_pages: int = 0
+        self, page: fitz.Page, bookmark: BookmarkEntry, y_position: float, num_toc_pages: int = 0
     ) -> float:
         """Draw a single bookmark entry WITHOUT adjusting page numbers."""
         # Calculate indentation
@@ -300,11 +286,7 @@ class TOCGenerator:
 
         # Draw title at left side
         page.insert_text(
-            fitz.Point(indent, y_position),
-            title_text,
-            fontsize=self.style.font_size,
-            fontname="helv",
-            color=(0, 0, 0)
+            fitz.Point(indent, y_position), title_text, fontsize=self.style.font_size, fontname="helv", color=(0, 0, 0)
         )
 
         if self.style.show_page_numbers:
@@ -314,19 +296,13 @@ class TOCGenerator:
                 page_text,
                 fontsize=self.style.font_size,
                 fontname="helv",
-                color=(0, 0, 0)
+                color=(0, 0, 0),
             )
 
         # NOTE: Links are created separately
         return y_position
 
-    def _draw_leader_dots(
-            self,
-            page: fitz.Page,
-            start_x: float,
-            y: float,
-            end_x: float
-    ):
+    def _draw_leader_dots(self, page: fitz.Page, start_x: float, y: float, end_x: float):
         """Draw leader dots between title and page number."""
         dot_spacing = 8
         current_x = start_x
@@ -334,21 +310,14 @@ class TOCGenerator:
         while current_x < end_x:
             # Draw a dot
             shape = page.new_shape()
-            shape.draw_circle(
-                fitz.Point(current_x, y),
-                0.5
-            )
+            shape.draw_circle(fitz.Point(current_x, y), 0.5)
             shape.finish(color=(0, 0, 0), fill=(0, 0, 0))
             shape.commit()
 
             current_x += dot_spacing
 
     def _add_roman_page_number(
-            self,
-            page: fitz.Page,
-            page_number: str,
-            position: str = "bottom-center",
-            font_size: int = 10
+        self, page: fitz.Page, page_number: str, position: str = "bottom-center", font_size: int = 10
     ):
         """
         Add Roman numeral page number using the same position as content pages.
@@ -408,23 +377,17 @@ class TOCGenerator:
         page.draw_rect(bg_rect, color=(1, 1, 1), fill=(1, 1, 1), fill_opacity=0.7)
 
         # Insert page number
-        page.insert_text(
-            fitz.Point(text_x, y),
-            page_number,
-            fontsize=font_size,
-            fontname="helv",
-            color=(0, 0, 0)
-        )
+        page.insert_text(fitz.Point(text_x, y), page_number, fontsize=font_size, fontname="helv", color=(0, 0, 0))
 
     def add_toc_to_pdf(
-            self,
-            input_pdf_path: str,
-            output_pdf_path: str,
-            bookmarks: Optional[List[BookmarkEntry]] = None,
-            insert_at_beginning: bool = True,
-            page_number_position: str = "bottom-center",
-            page_number_font_size: int = 10
-    ) -> Dict[str, any]:
+        self,
+        input_pdf_path: str,
+        output_pdf_path: str,
+        bookmarks: Optional[List[BookmarkEntry]] = None,
+        insert_at_beginning: bool = True,
+        page_number_position: str = "bottom-center",
+        page_number_font_size: int = 10,
+    ) -> Dict[str, Any]:
         """
         Add TOC to existing PDF.
 
@@ -463,10 +426,7 @@ class TOCGenerator:
                 bookmarks = self.extract_bookmarks(pdf_doc)
 
             if not bookmarks:
-                return {
-                    'success': False,
-                    'error': 'No bookmarks provided or found in PDF'
-                }
+                return {"success": False, "error": "No bookmarks provided or found in PDF"}
 
             # === STEP 3: Detect page size ===
             if len(pdf_doc) > 0:
@@ -490,19 +450,13 @@ class TOCGenerator:
                 roman = roman_numerals[i] if i < len(roman_numerals) else f"({i + 1})"
 
                 # Use the provided page_number_position parameter
-                self._add_roman_page_number(
-                    page,
-                    roman,
-                    position=page_number_position,
-                    font_size=page_number_font_size
-                )
+                self._add_roman_page_number(page, roman, position=page_number_position, font_size=page_number_font_size)
                 print(f"Added Roman numeral '{roman}' to TOC page {i} at position: {page_number_position}")
 
             # === STEP 6: CORRECTED PAGE NUMBER LOGIC ===
-            print(f"=== Applying Corrected Page Number Logic ===")
+            print("=== Applying Corrected Page Number Logic ===")
             print(f"TOC pages: {num_toc_pages}")
             print(f"Original document pages: {original_page_count}")
-            print(f"Total pages after TOC insertion: {len(pdf_doc)}")
 
             # KEY FIX: SIMPLIFIED AND CORRECTED LOGIC
             # - User provides content page numbers (1, 2, 3...)
@@ -516,6 +470,8 @@ class TOCGenerator:
 
             # Recalculate bookmark distribution across pages (matching _create_toc_pages logic)
             usable_height = page_height - self.style.margin_top - self.style.margin_bottom - 40
+
+            print(f"Total pages after TOC insertion: {len(pdf_doc)}")
             entry_height = self.style.font_size * self.style.line_spacing
             max_entries_per_page = int(usable_height / entry_height) - 2
 
@@ -552,7 +508,7 @@ class TOCGenerator:
                 print(f"Processing TOC page {toc_page_num + 1} with {len(page_bookmarks)} bookmarks")
 
                 # Calculate correct starting y_position matching _draw_toc() logic
-                y_position = self.style.margin_top
+                y_position: float = float(self.style.margin_top)
                 if toc_page_num == 0:  # First page has title
                     # Match _draw_title: separator_y = y_position + title_font_size + 5
                     separator_y = y_position + self.style.title_font_size + 5
@@ -579,23 +535,23 @@ class TOCGenerator:
 
                     # Create clickable area
                     link_rect = fitz.Rect(
-                        self.style.separator_left,
-                        y_position - 8,
-                        self.style.separator_right,
-                        y_position + 12
+                        self.style.separator_left, y_position - 8, self.style.separator_right, y_position + 12
                     )
 
                     # Insert link - point to CORRECT PDF page
-                    page.insert_link({
-                        "kind": fitz.LINK_GOTO,
-                        "from": link_rect,
-                        "page": target_page_index,
-                        "to": fitz.Point(0, 50),
-                    })
+                    page.insert_link(
+                        {
+                            "kind": fitz.LINK_GOTO,
+                            "from": link_rect,
+                            "page": target_page_index,
+                            "to": fitz.Point(0, 50),
+                        }
+                    )
 
                     # TOC displays user page number, links to actual PDF page
-                    print(
-                        f"  TOC page {toc_page_num + 1}: '{bookmark.title}' -> shows page {bookmark.page}, links to PDF page {target_page_index + 1}")
+                    msg_left = f"  TOC page {toc_page_num + 1}: '{bookmark.title}' -> shows page {bookmark.page}, "
+                    msg_right = f"links to PDF page {target_page_index + 1}"
+                    print(msg_left + msg_right)
 
                     y_position += self.style.font_size * self.style.line_spacing
 
@@ -606,11 +562,13 @@ class TOCGenerator:
                 # Bookmarks point to ACTUAL PDF pages (after TOC insertion)
                 # Same calculation as for links
                 actual_pdf_page = num_toc_pages + bookmark.page  # This is the key fix!
-                final_bookmarks.append(BookmarkEntry(
-                    title=bookmark.title,
-                    page=actual_pdf_page,  # Use actual PDF page number after TOC insertion
-                    level=bookmark.level
-                ))
+                final_bookmarks.append(
+                    BookmarkEntry(
+                        title=bookmark.title,
+                        page=actual_pdf_page,  # Use actual PDF page number after TOC insertion
+                        level=bookmark.level,
+                    )
+                )
                 print(f"  '{bookmark.title}' -> PDF bookmark points to actual PDF page {actual_pdf_page}")
 
             # Add final bookmarks to PDF outline
@@ -620,36 +578,31 @@ class TOCGenerator:
             pdf_doc.save(output_pdf_path)
             pdf_doc.close()
 
-            print(f"✓ TOC generation complete:")
+            print("✓ TOC generation complete:")
             print(f"  - TOC pages: {num_toc_pages} (Roman numerals)")
             print(f"  - Content pages: {original_page_count} (Arabic numerals)")
-            print(f"  - TOC shows user page numbers (content starts at 1)")
-            print(f"  - TOC links work correctly to actual PDF pages")
-            print(f"  - PDF bookmarks work correctly")
+            print("  - TOC shows user page numbers (content starts at 1)")
+            print("  - TOC links work correctly to actual PDF pages")
+            print("  - PDF bookmarks work correctly")
 
             return {
-                'success': True,
-                'output_path': output_pdf_path,
-                'toc_pages': num_toc_pages,
-                'bookmark_count': len(final_bookmarks),
-                'old_toc_pages_removed': len(pages_to_delete)
+                "success": True,
+                "output_path": output_pdf_path,
+                "toc_pages": num_toc_pages,
+                "bookmark_count": len(final_bookmarks),
+                "old_toc_pages_removed": len(pages_to_delete),
             }
 
         except Exception as e:
             print(f"Error in add_toc_to_pdf: {e}")
             import traceback
+
             traceback.print_exc()
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def update_bookmarks_only(
-            self,
-            input_pdf_path: str,
-            output_pdf_path: str,
-            bookmarks: List[BookmarkEntry]
-    ) -> Dict[str, any]:
+        self, input_pdf_path: str, output_pdf_path: str, bookmarks: List[BookmarkEntry]
+    ) -> Dict[str, Any]:
         """
         Update PDF bookmarks without generating TOC pages.
 
@@ -670,11 +623,9 @@ class TOCGenerator:
             for bookmark in bookmarks:
                 # User provides 1-based page numbers, PDF uses 1-based for bookmarks
                 # So we can use them directly (no TOC pages to offset)
-                pdf_bookmarks.append(BookmarkEntry(
-                    title=bookmark.title,
-                    page=bookmark.page,  # Use as-is (1-based)
-                    level=bookmark.level
-                ))
+                pdf_bookmarks.append(
+                    BookmarkEntry(title=bookmark.title, page=bookmark.page, level=bookmark.level)  # Use as-is (1-based)
+                )
                 print(f"Bookmark: '{bookmark.title}' -> page {bookmark.page}")
 
             # Add bookmarks to PDF
@@ -684,20 +635,14 @@ class TOCGenerator:
             pdf_doc.save(output_pdf_path)
             pdf_doc.close()
 
-            return {
-                'success': True,
-                'output_path': output_pdf_path,
-                'bookmark_count': len(bookmarks)
-            }
+            return {"success": True, "output_path": output_pdf_path, "bookmark_count": len(bookmarks)}
 
         except Exception as e:
             print(f"Error in update_bookmarks_only: {e}")
             import traceback
+
             traceback.print_exc()
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}
 
 
 class BookmarkManager:
@@ -718,8 +663,8 @@ class BookmarkManager:
         """
         # Clean filename for bookmark
         title = os.path.splitext(os.path.basename(filename))[0]
-        title = title.replace('_', ' ').replace('-', ' ')
-        title = ' '.join(word.capitalize() for word in title.split())
+        title = title.replace("_", " ").replace("-", " ")
+        title = " ".join(word.capitalize() for word in title.split())
 
         return BookmarkEntry(title=title, page=page, level=level)
 
@@ -735,23 +680,19 @@ class BookmarkManager:
         # Convert to PyMuPDF TOC format
         toc = []
         for bookmark in bookmarks:
-            toc.append([
-                bookmark.level + 1,  # PyMuPDF uses 1-based levels
-                bookmark.title,
-                bookmark.page
-            ])
+            toc.append([bookmark.level + 1, bookmark.title, bookmark.page])  # PyMuPDF uses 1-based levels
 
         # Set TOC
         pdf_doc.set_toc(toc)
 
     @staticmethod
     def merge_pdfs_with_bookmarks(
-            pdf_files: List[str],
-            bookmark_labels: Optional[Dict[int, str]] = None,
-            output_path: str = None,
-            add_toc: bool = False,
-            toc_style: Optional[TOCStyle] = None
-    ) -> Dict[str, any]:
+        pdf_files: List[str],
+        bookmark_labels: Optional[Dict[int, str]] = None,
+        output_path: Optional[str] = None,
+        add_toc: bool = False,
+        toc_style: Optional[TOCStyle] = None,
+    ) -> Dict[str, Any]:
         """
         Merge PDFs with custom bookmarks and optional TOC.
 
@@ -791,11 +732,7 @@ class BookmarkManager:
                     estimated_toc_pages = max(1, len(pdf_files) // 40 + 1)
                     page_offset = estimated_toc_pages
 
-                bookmarks.append(BookmarkEntry(
-                    title=label,
-                    page=current_page + 1 + page_offset,
-                    level=0
-                ))
+                bookmarks.append(BookmarkEntry(title=label, page=current_page + 1 + page_offset, level=0))
 
                 current_page += len(src_doc)
                 src_doc.close()
@@ -814,11 +751,11 @@ class BookmarkManager:
                     # Update bookmarks in merged doc
                     updated_bookmarks = []
                     for bookmark in bookmarks:
-                        updated_bookmarks.append(BookmarkEntry(
-                            title=bookmark.title,
-                            page=bookmark.page + page_adjustment,
-                            level=bookmark.level
-                        ))
+                        updated_bookmarks.append(
+                            BookmarkEntry(
+                                title=bookmark.title, page=bookmark.page + page_adjustment, level=bookmark.level
+                            )
+                        )
                     bookmarks = updated_bookmarks
 
             # Add bookmarks to merged PDF
@@ -834,16 +771,13 @@ class BookmarkManager:
             merged_doc.close()
 
             return {
-                'success': True,
-                'output_path': output_path,
-                'total_pages': current_page + (len(toc_pages) if add_toc else 0),
-                'bookmark_count': len(bookmarks),
-                'has_toc': add_toc,
-                'toc_pages': len(toc_pages) if add_toc else 0
+                "success": True,
+                "output_path": output_path,
+                "total_pages": current_page + (len(toc_pages) if add_toc else 0),
+                "bookmark_count": len(bookmarks),
+                "has_toc": add_toc,
+                "toc_pages": len(toc_pages) if add_toc else 0,
             }
 
         except Exception as e:
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}

@@ -4,13 +4,13 @@ Updated to match merge_service.py patterns and use fixed TOCGenerator
 """
 
 import logging
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import uuid
 
 import fitz
 
-from ..core.toc import TOCGenerator, BookmarkManager, BookmarkEntry, TOCStyle
+from ..core.toc import BookmarkEntry, BookmarkManager, TOCGenerator, TOCStyle
 from ..utils.file_manager import FilePathManager, get_file_manager
 from ..utils.file_utils import cleanup_temp_files
 
@@ -44,11 +44,7 @@ class TOCService:
 
             # Convert to dictionary format for JSON response
             bookmarks_dict = [
-                {
-                    'title': bm.title,
-                    'page': bm.page,  # Already 1-based from TOCGenerator
-                    'level': bm.level
-                }
+                {"title": bm.title, "page": bm.page, "level": bm.level}  # Already 1-based from TOCGenerator
                 for bm in bookmarks
             ]
 
@@ -61,10 +57,10 @@ class TOCService:
             logger.info(f"Extracted {len(bookmarks_dict)} bookmarks from {original_filename}")
 
             return {
-                'success': True,
-                'filename': original_filename,
-                'page_count': page_count,
-                'bookmarks': bookmarks_dict
+                "success": True,
+                "filename": original_filename,
+                "page_count": page_count,
+                "bookmarks": bookmarks_dict,
             }
 
         except Exception as e:
@@ -73,9 +69,9 @@ class TOCService:
             if pdf_doc:
                 try:
                     pdf_doc.close()
-                except:
+                except Exception:
                     pass
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     def add_toc_to_file(self, input_path, original_filename, bookmarks_data, toc_style_config):
         """
@@ -85,19 +81,21 @@ class TOCService:
             # Convert bookmarks data to BookmarkEntry objects
             bookmarks = []
             for bm_data in bookmarks_data:
-                bookmarks.append(BookmarkEntry(
-                    title=bm_data['title'],
-                    page=bm_data['page'],  # User provides 1-based page numbers
-                    level=bm_data.get('level', 0)
-                ))
+                bookmarks.append(
+                    BookmarkEntry(
+                        title=bm_data["title"],
+                        page=bm_data["page"],  # User provides 1-based page numbers
+                        level=bm_data.get("level", 0),
+                    )
+                )
 
             # Create TOC style from config
             toc_style = TOCStyle(
-                title=toc_style_config.get('title', 'Table of Contents'),
-                show_page_numbers=toc_style_config.get('show_page_numbers', True),
-                leader_dots=toc_style_config.get('leader_dots', True),
-                page_number_position=toc_style_config.get('page_number_position', 'bottom-center'),
-                page_number_font_size=toc_style_config.get('page_number_font_size', 10)
+                title=toc_style_config.get("title", "Table of Contents"),
+                show_page_numbers=toc_style_config.get("show_page_numbers", True),
+                leader_dots=toc_style_config.get("leader_dots", True),
+                page_number_position=toc_style_config.get("page_number_position", "bottom-center"),
+                page_number_font_size=toc_style_config.get("page_number_font_size", 10),
             )
 
             # Set the style
@@ -113,28 +111,28 @@ class TOCService:
                 output_pdf_path=str(output_path),
                 bookmarks=bookmarks,
                 page_number_position=toc_style.page_number_position,
-                page_number_font_size=toc_style.page_number_font_size
+                page_number_font_size=toc_style.page_number_font_size,
             )
 
-            if result['success']:
+            if result["success"]:
                 # Generate file_id for download
                 file_id = self._save_to_component_dir(str(output_path), output_filename)
 
                 logger.info(f"TOC generation successful: {output_filename}")
 
                 return {
-                    'success': True,
-                    'file_id': file_id,
-                    'filename': output_filename,
-                    'toc_pages': result.get('toc_pages', 0),
-                    'bookmark_count': result.get('bookmark_count', 0)
+                    "success": True,
+                    "file_id": file_id,
+                    "filename": output_filename,
+                    "toc_pages": result.get("toc_pages", 0),
+                    "bookmark_count": result.get("bookmark_count", 0),
                 }
             else:
                 return result
 
         except Exception as e:
             logger.error(f"Error adding TOC: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     def update_pdf_bookmarks_in_file(self, input_path, original_filename, bookmarks_data):
         """
@@ -145,11 +143,13 @@ class TOCService:
             # Convert bookmarks data to BookmarkEntry objects
             bookmarks = []
             for bm_data in bookmarks_data:
-                bookmarks.append(BookmarkEntry(
-                    title=bm_data['title'],
-                    page=bm_data['page'],  # User provides 1-based page numbers
-                    level=bm_data.get('level', 0)
-                ))
+                bookmarks.append(
+                    BookmarkEntry(
+                        title=bm_data["title"],
+                        page=bm_data["page"],  # User provides 1-based page numbers
+                        level=bm_data.get("level", 0),
+                    )
+                )
 
             # Generate output filename
             output_filename = f"{Path(original_filename).stem}_with_bookmarks.pdf"
@@ -157,29 +157,27 @@ class TOCService:
 
             # Update bookmarks only using TOCGenerator
             result = self.toc_generator.update_bookmarks_only(
-                input_pdf_path=input_path,
-                output_pdf_path=str(output_path),
-                bookmarks=bookmarks
+                input_pdf_path=input_path, output_pdf_path=str(output_path), bookmarks=bookmarks
             )
 
-            if result['success']:
+            if result["success"]:
                 # Generate file_id for download
                 file_id = self._save_to_component_dir(str(output_path), output_filename)
 
                 logger.info(f"Bookmarks update successful: {output_filename}")
 
                 return {
-                    'success': True,
-                    'file_id': file_id,
-                    'filename': output_filename,
-                    'bookmark_count': len(bookmarks)
+                    "success": True,
+                    "file_id": file_id,
+                    "filename": output_filename,
+                    "bookmark_count": len(bookmarks),
                 }
             else:
                 return result
 
         except Exception as e:
             logger.error(f"Error updating bookmarks: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     def _save_to_component_dir(self, file_path: str, filename: str) -> str:
         """
@@ -210,6 +208,7 @@ class TOCService:
 
             # Copy file to component directory
             import shutil
+
             shutil.copy2(file_path, output_path)
 
             logger.info(f"Saved file to component directory: {output_path}")
@@ -233,11 +232,7 @@ class MergeWithTOCService:
 
         logger.info(f"MergeWithTOCService initialized with upload folder: {self.upload_folder}")
 
-    def get_merge_preview(
-            self,
-            file_paths: List[str],
-            filenames: List[str]
-    ) -> Dict[str, Any]:
+    def get_merge_preview(self, file_paths: List[str], filenames: List[str]) -> Dict[str, Any]:
         """
         Get preview information for PDF merge operation.
 
@@ -268,47 +263,38 @@ class MergeWithTOCService:
                 pdf_doc.close()
 
                 # Generate suggested bookmark
-                suggested_bookmark = BookmarkManager.create_bookmark_from_filename(
-                    filename,
-                    current_page
-                )
+                suggested_bookmark = BookmarkManager.create_bookmark_from_filename(filename, current_page)
 
-                file_info.append({
-                    'index': idx,
-                    'filename': filename,
-                    'page_count': page_count,
-                    'start_page': current_page,
-                    'end_page': current_page + page_count - 1,
-                    'suggested_bookmark': suggested_bookmark.title
-                })
+                file_info.append(
+                    {
+                        "index": idx,
+                        "filename": filename,
+                        "page_count": page_count,
+                        "start_page": current_page,
+                        "end_page": current_page + page_count - 1,
+                        "suggested_bookmark": suggested_bookmark.title,
+                    }
+                )
 
                 total_pages += page_count
                 current_page += page_count
 
             logger.info(f"Preview generated: {len(file_info)} files, {total_pages} total pages")
 
-            return {
-                'success': True,
-                'files': file_info,
-                'total_pages': total_pages,
-                'file_count': len(file_paths)
-            }
+            return {"success": True, "files": file_info, "total_pages": total_pages, "file_count": len(file_paths)}
 
         except Exception as e:
             logger.exception("Error generating merge preview")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def merge_pdfs_with_toc(
-            self,
-            file_paths: List[str],
-            filenames: List[str],
-            bookmark_labels: Optional[Dict[int, str]] = None,
-            output_filename: Optional[str] = None,
-            add_toc: bool = False,
-            toc_style_config: Optional[Dict] = None
+        self,
+        file_paths: List[str],
+        filenames: List[str],
+        bookmark_labels: Optional[Dict[int, str]] = None,
+        output_filename: Optional[str] = None,
+        add_toc: bool = False,
+        toc_style_config: Optional[Dict] = None,
     ) -> Dict[str, Any]:
         """
         Merge multiple PDFs with optional TOC generation.
@@ -337,10 +323,7 @@ class MergeWithTOCService:
                     logger.warning(f"File not found: {file_path}")
 
             if len(valid_paths) < 2:
-                return {
-                    'success': False,
-                    'error': 'At least 2 valid PDF files required'
-                }
+                return {"success": False, "error": "At least 2 valid PDF files required"}
 
             # Generate output filename using file manager
             if output_filename:
@@ -370,13 +353,13 @@ class MergeWithTOCService:
                 bookmark_labels=bookmark_labels,
                 output_path=str(output_path),
                 add_toc=add_toc,
-                toc_style=toc_style
+                toc_style=toc_style,
             )
 
             # Cleanup source files
             cleanup_temp_files(file_paths)
 
-            if result['success']:
+            if result["success"]:
                 # Extract file_id from output path
                 file_id = Path(output_path).stem
 
@@ -387,14 +370,14 @@ class MergeWithTOCService:
                     logger.info("Table of Contents created in merged PDF")
 
                 return {
-                    'success': True,
-                    'file_id': file_id,
-                    'filename': output_filename,
-                    'file_path': str(output_path),
-                    'total_pages': result.get('total_pages', 0),
-                    'bookmark_count': result.get('bookmark_count', 0),
-                    'has_toc': result.get('has_toc', False),
-                    'toc_pages': result.get('toc_pages', 0)
+                    "success": True,
+                    "file_id": file_id,
+                    "filename": output_filename,
+                    "file_path": str(output_path),
+                    "total_pages": result.get("total_pages", 0),
+                    "bookmark_count": result.get("bookmark_count", 0),
+                    "has_toc": result.get("has_toc", False),
+                    "toc_pages": result.get("toc_pages", 0),
                 }
             else:
                 return result
@@ -405,7 +388,4 @@ class MergeWithTOCService:
             # Cleanup on error
             cleanup_temp_files(file_paths)
 
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}
