@@ -15,11 +15,10 @@ logger = logging.getLogger(__name__)
 
 download_bp = Blueprint("download", __name__)
 
-
 def find_file_anywhere(filename: str):
     """
     Search for file in all possible locations with priority:
-    1. Component-specific directories (merge/, normalize/, compress/)
+    1. Component-specific download directories (downloads/merge/, downloads/toc/, etc.)
     2. Old downloads directory
     3. Old uploads directory
     """
@@ -28,24 +27,26 @@ def find_file_anywhere(filename: str):
         current_app.logger.error("Security check failed")
         return None
 
-    # Try component-specific directories first
-    components = ["merge", "normalize", "compress"]
+    # Try component-specific download directories first
+    components = ["merge", "normalize", "compress", "toc"]  # INCLUDES TOC
     for component in components:
         file_manager = get_file_manager(component)
-        component_dir = file_manager.get_component_dir()
-        file_path = component_dir / filename
+        # Get the downloads directory for this component
+        downloads_dir = file_manager.downloads_dir
+        component_download_dir = file_manager.get_component_dir()  # This will be downloads/toc/
+        file_path = component_download_dir / filename
         if file_path.exists():
-            current_app.logger.info(f"✅ Found file in {component} directory: {file_path}")
+            current_app.logger.info(f"✅ Found file in {component} downloads: {file_path}")
             return file_path
 
-    # Fallback 1: Old downloads directory
+    # Fallback: Search in main downloads directory
     old_downloads = Path(os.getcwd()) / "downloads"
     file_path = old_downloads / filename
     if file_path.exists():
         current_app.logger.info(f"✅ Found file in old downloads directory: {file_path}")
         return file_path
 
-    # Fallback 2: Old uploads directory
+    # Fallback: Search in uploads directory
     old_uploads = Path(os.getcwd()) / "uploads"
     file_path = old_uploads / filename
     if file_path.exists():
@@ -53,7 +54,6 @@ def find_file_anywhere(filename: str):
         return file_path
 
     return None
-
 
 def find_file_by_id(file_id: str, component: str | None = None):
     """
@@ -69,7 +69,7 @@ def find_file_by_id(file_id: str, component: str | None = None):
                 return file_path
     else:
         # Search all component directories
-        components = ["merge", "normalize", "compress"]
+        components = ["merge", "normalize", "compress", "toc"]
         for comp in components:
             file_manager = get_file_manager(comp)
             component_dir = file_manager.get_component_dir()
@@ -119,7 +119,7 @@ def download_component_file(component, file_id):
     current_app.logger.info(f"🎯 COMPONENT DOWNLOAD: {component}/{file_id}")
 
     try:
-        valid_components = ["merge", "normalize", "compress"]
+        valid_components = ["merge", "normalize", "compress", "toc"]
         if component not in valid_components:
             abort(400, f"Invalid component. Must be one of: {', '.join(valid_components)}")
 
@@ -173,7 +173,7 @@ def cleanup_file(component, filename):
         safe_filename = secure_filename(filename)
 
         # Validate component
-        valid_components = ["compress", "merge", "normalize"]
+        valid_components = ["compress", "merge", "normalize", "toc"]
         if component not in valid_components:
             return jsonify({"success": False, "error": "Invalid component"}), 400
 
@@ -222,7 +222,7 @@ def debug_current_state():
     result = {"current_working_directory": os.getcwd(), "file_manager_locations": {}, "old_locations": {}}
 
     # Check file manager locations
-    components = ["merge", "normalize", "compress"]
+    components = ["merge", "normalize", "compress", "toc"]
     for component in components:
         file_manager = get_file_manager(component)
         component_dir = file_manager.get_component_dir()

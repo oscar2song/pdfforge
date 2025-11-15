@@ -128,3 +128,4 @@ fixtures/
 .coverage.*
 
 local/
+demo/
