@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOC Manager - PDFForge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f0f0;
+        }
+
+        .upload-section.dragover {
+            background: #e3e7ff;
+            border-color: #764ba2;
+        }
+
+        .file-input-wrapper {
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-info {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .file-info.active {
+            display: block;
+        }
+
+        .bookmarks-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .bookmarks-section.active {
+            display: block;
+        }
+
+        .bookmarks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .bookmarks-header h2 {
+            color: #333;
+        }
+
+        .bookmarks-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .bookmarks-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .bookmarks-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .bookmarks-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .bookmarks-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .bookmarks-table input,
+        .bookmarks-table select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .bookmarks-table input:focus,
+        .bookmarks-table select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .add-bookmark-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .add-bookmark-btn:hover {
+            background: #218838;
+        }
+
+        .actions {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.active {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .toc-options {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .toc-options h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .option-group {
+            margin-bottom: 15px;
+        }
+
+        .option-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .option-group input[type="text"],
+        .option-group input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📑 TOC Manager</h1>
+        <p>Manage Table of Contents and Bookmarks for Your PDFs</p>
+    </div>
+
+    <div class="nav">
+        <a href="/">← Back to Home</a>
+    </div>
+
+    <div class="content">
+        <div class="alert alert-success" id="successAlert"></div>
+        <div class="alert alert-error" id="errorAlert"></div>
+
+        <div class="upload-section" id="uploadSection">
+            <h2>📤 Upload PDF</h2>
+            <p style="margin: 20px 0; color: #666;">
+                Upload a PDF to view/edit existing bookmarks or create new ones
+            </p>
+            <div class="file-input-wrapper">
+                <button class="btn" onclick="document.getElementById('pdfFile').click()">
+                    Choose PDF File
+                </button>
+                <input type="file" id="pdfFile" accept=".pdf">
+            </div>
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <h3 id="fileName"></h3>
+            <p><strong>Pages:</strong> <span id="pageCount"></span></p>
+        </div>
+
+        <div class="bookmarks-section" id="bookmarksSection">
+            <div class="bookmarks-header">
+                <h2>Bookmarks</h2>
+                <button class="add-bookmark-btn" onclick="addBookmarkRow()">
+                    ➕ Add Bookmark
+                </button>
+            </div>
+
+            <div id="bookmarksContainer">
+                <div class="empty-state" id="emptyState">
+                    <h3>No Bookmarks Found</h3>
+                    <p>This PDF doesn't have any bookmarks yet. Click "Add Bookmark" to create one.</p>
+                </div>
+
+                <table class="bookmarks-table" id="bookmarksTable" style="display: none;">
+                    <thead>
+                    <tr>
+                        <th style="width: 50%;">Title</th>
+                        <th style="width: 15%;">Page</th>
+                        <th style="width: 15%;">Level</th>
+                        <th style="width: 20%;">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="bookmarksBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="toc-options">
+                <h3>TOC Options</h3>
+                <div class="option-group">
+                    <label>TOC Title:</label>
+                    <input type="text" id="tocTitle" value="Table of Contents">
+                </div>
+                <!-- NEW: TOC Page Number Position -->
+                <div class="option-group">
+                    <label for="tocPageNumberPosition">TOC Page Number Position:</label>
+                    <select id="tocPageNumberPosition">
+                        <option value="top-center">Top Center</option>
+                        <option value="bottom-center" selected>Bottom Center</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="bottom-right">Bottom Right</option>
+                    </select>
+                </div>
+                <div class="option-group checkbox-group">
+                    <input type="checkbox" id="showPageNumbers" checked>
+                    <label for="showPageNumbers">Show Page Numbers</label>
+                </div>
+                <div class="option-group checkbox-group">
+                    <input type="checkbox" id="leaderDots" checked>
+                    <label for="leaderDots">Show Leader Dots</label>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-success" onclick="generateTOC()">
+                    📄 Generate TOC Page
+                </button>
+                <button class="btn btn-secondary" onclick="updateBookmarks()">
+                    🔖 Update Bookmarks Only
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentFile = null;
+    let currentPageCount = 0;
+
+    // File upload handler
+    document.getElementById('pdfFile').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            loadPDF(file);
+        }
+    });
+
+    // Drag and drop support
+    const uploadSection = document.getElementById('uploadSection');
+    uploadSection.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadSection.classList.add('dragover');
+    });
+
+    uploadSection.addEventListener('dragleave', () => {
+        uploadSection.classList.remove('dragover');
+    });
+
+    uploadSection.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadSection.classList.remove('dragover');
+
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === 'application/pdf') {
+            currentFile = file;
+            document.getElementById('pdfFile').files = e.dataTransfer.files;
+            loadPDF(file);
+        } else {
+            showError('Please drop a PDF file');
+        }
+    });
+
+    // In the loadPDF function - NO conversion for display
+    function loadPDF(file) {
+        currentFile = file;
+        showSpinner();
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/toc/extract', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                hideSpinner();
+
+                if (data.success) {
+                    currentPageCount = data.page_count;
+                    displayFileInfo(data.filename, data.page_count);
+
+                    // Display bookmarks as-is (backend should return correct page numbers)
+                    displayBookmarks(data.bookmarks);
+                } else {
+                    showError(data.error || 'Failed to load PDF');
+                }
+            })
+            .catch(error => {
+                hideSpinner();
+                showError('Error loading PDF: ' + error.message);
+            });
+    }
+
+    // In prepareBookmarksForBackend - NO conversion
+    function prepareBookmarksForBackend() {
+        const tbody = document.getElementById('bookmarksBody');
+        const bookmarks = [];
+
+        for (let row of tbody.rows) {
+            const title = row.querySelector('.bookmark-title').value.trim();
+            const page = parseInt(row.querySelector('.bookmark-page').value);
+            const level = parseInt(row.querySelector('.bookmark-level').value);
+
+            if (title && !isNaN(page)) {
+                bookmarks.push({
+                    title: title,
+                    page: page, // Send as-is to backend
+                    level: level
+                });
+            }
+        }
+
+        return bookmarks;
+    }
+
+    // Also update the addBookmarkRow function to ensure proper page number validation
+    function addBookmarkRow(bookmark = null) {
+        const table = document.getElementById('bookmarksTable');
+        const tbody = document.getElementById('bookmarksBody');
+        const emptyState = document.getElementById('emptyState');
+
+        emptyState.style.display = 'none';
+        table.style.display = 'table';
+
+        // Determine the page value - if bookmark exists, use it, otherwise default to 1
+        let pageValue = 1;
+        if (bookmark && bookmark.page) {
+            pageValue = bookmark.page;
+        }
+
+        const row = tbody.insertRow();
+        row.innerHTML = `
+        <td>
+            <input type="text" class="bookmark-title" value="${bookmark ? bookmark.title : ''}" placeholder="Enter title...">
+        </td>
+        <td>
+            <input type="number" class="bookmark-page" value="${pageValue}" min="1" max="${currentPageCount}">
+        </td>
+        <td>
+            <select class="bookmark-level">
+                <option value="0" ${!bookmark || bookmark.level === 0 ? 'selected' : ''}>Level 1</option>
+                <option value="1" ${bookmark && bookmark.level === 1 ? 'selected' : ''}>Level 2</option>
+                <option value="2" ${bookmark && bookmark.level === 2 ? 'selected' : ''}>Level 3</option>
+            </select>
+        </td>
+        <td>
+            <button class="delete-btn" onclick="deleteBookmarkRow(this)">🗑️ Delete</button>
+        </td>
+    `;
+    }
+
+    function displayFileInfo(filename, pageCount) {
+        document.getElementById('fileName').textContent = filename;
+        document.getElementById('pageCount').textContent = pageCount;
+        document.getElementById('fileInfo').classList.add('active');
+        document.getElementById('bookmarksSection').classList.add('active');
+    }
+
+    function displayBookmarks(bookmarks) {
+        const emptyState = document.getElementById('emptyState');
+        const table = document.getElementById('bookmarksTable');
+        const tbody = document.getElementById('bookmarksBody');
+
+        tbody.innerHTML = '';
+
+        if (bookmarks.length === 0) {
+            emptyState.style.display = 'block';
+            table.style.display = 'none';
+        } else {
+            emptyState.style.display = 'none';
+            table.style.display = 'table';
+
+            bookmarks.forEach((bookmark, index) => {
+                addBookmarkRow(bookmark);
+            });
+        }
+    }
+
+
+    function deleteBookmarkRow(btn) {
+        const row = btn.closest('tr');
+        row.remove();
+
+        const tbody = document.getElementById('bookmarksBody');
+        if (tbody.rows.length === 0) {
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('bookmarksTable').style.display = 'none';
+        }
+    }
+
+    function getBookmarks() {
+        const tbody = document.getElementById('bookmarksBody');
+        const bookmarks = [];
+
+        for (let row of tbody.rows) {
+            const title = row.querySelector('.bookmark-title').value.trim();
+            const page = parseInt(row.querySelector('.bookmark-page').value);
+            const level = parseInt(row.querySelector('.bookmark-level').value);
+
+            if (title && page) {
+                bookmarks.push({title, page, level});
+            }
+        }
+
+        return bookmarks;
+    }
+
+
+    // Update the generateTOC function to handle TOC page offset
+    function generateTOC() {
+        const bookmarks = prepareBookmarksForBackend();
+
+        if (bookmarks.length === 0) {
+            showError('Please add at least one bookmark');
+            return;
+        }
+
+        if (!currentFile) {
+            showError('No PDF file loaded');
+            return;
+        }
+
+        showSpinner();
+
+        const formData = new FormData();
+        formData.append('file', currentFile);
+        formData.append('bookmarks', JSON.stringify(bookmarks));
+
+        const tocStyle = {
+            title: document.getElementById('tocTitle').value,
+            show_page_numbers: document.getElementById('showPageNumbers').checked,
+            leader_dots: document.getElementById('leaderDots').checked,
+            page_number_position: document.getElementById('tocPageNumberPosition').value
+        };
+        formData.append('toc_style', JSON.stringify(tocStyle));
+
+        fetch('/toc/generate', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.download_url;
+                    hideSpinner();
+                    showSuccess('TOC generated successfully!');
+                } else {
+                    hideSpinner();
+                    showError(data.error || 'Failed to generate TOC');
+                }
+            })
+            .catch(error => {
+                hideSpinner();
+                showError('Error generating TOC: ' + error.message);
+            });
+    }
+
+    // Update the updateBookmarks function (no TOC pages added)
+    function updateBookmarks() {
+        const bookmarks = prepareBookmarksForBackend();
+        if (bookmarks.length === 0) {
+            showError('Please add at least one bookmark');
+            return;
+        }
+
+        if (!currentFile) {
+            showError('No PDF file loaded');
+            return;
+        }
+
+        showSpinner();
+
+        const formData = new FormData();
+        formData.append('file', currentFile);
+        formData.append('bookmarks', JSON.stringify(bookmarks));
+
+        fetch('/toc/update-bookmarks', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.download_url;
+                    hideSpinner();
+                    showSuccess('Bookmarks updated successfully!');
+                } else {
+                    hideSpinner();
+                    showError(data.error || 'Failed to update bookmarks');
+                }
+            })
+            .catch(error => {
+                hideSpinner();
+                showError('Error updating bookmarks: ' + error.message);
+            });
+    }
+
+    function showSpinner() {
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner';
+        spinner.id = 'spinner';
+        document.querySelector('.content').appendChild(spinner);
+    }
+
+    function hideSpinner() {
+        const spinner = document.getElementById('spinner');
+        if (spinner) {
+            spinner.remove();
+        }
+    }
+
+    function showSuccess(message) {
+        const alert = document.getElementById('successAlert');
+        alert.textContent = message;
+        alert.classList.add('active');
+        setTimeout(() => alert.classList.remove('active'), 5000);
+    }
+
+    function showError(message) {
+        const alert = document.getElementById('errorAlert');
+        alert.textContent = message;
+        alert.classList.add('active');
+        setTimeout(() => alert.classList.remove('active'), 5000);
+    }
+</script>
+</body>
+</html>

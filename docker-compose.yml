@@ -5,13 +5,14 @@ services:
   pdf-merge-app:
     build: .
     ports:
-      - "5000:5000"
+      - "8080:8080"
     volumes:
       - pdf_data:/opt/pdf-merge-app/data
       - pdf_logs:/opt/pdf-merge-app/logs
     environment:
       - PDF_APP_DATA_DIR=/opt/pdf-merge-app/data
       - FLASK_ENV=production
+      - PORT=8080
 
 volumes:
   pdf_data:

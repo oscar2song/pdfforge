@@ -201,3 +201,20 @@ This release represents a complete rewrite of PDFForge with a modern, modular ar
 
 [2.1.0]: https://github.com/oscar2song/pdfforge/compare/v1.0.0...v2.1.0
 [1.0.0]: https://github.com/oscar2song/pdfforge/releases/tag/v1.0.0
+
+
+## [2.2.0] - 2025-11-15
+
+### Added
+- Navigation: “TOC Manager” added to the top menu for quick access (`pdfforge/templates/base.html`).
+
+### Changed
+- Homepage: Removed links and UI for the deprecated “Enhanced Merge with TOC” and consolidated to the standard Merge flow (`main.merge_page`).
+- Ports: Documentation now recommends using allowed browser ports (e.g., 8080 or 5000). Note about Chromium’s unsafe port policy (6000 is blocked) added.
+- Docker: Binds to 8080 and uses the current app factory path `pdfforge.create_app:create_app()` in `Dockerfile` and `docker-compose.yml`.
+
+### Removed
+- Enhanced Merge feature references (blueprint unregistered, homepage cards removed). Files remain in repo for now but are unused.
+
+### Notes
+- If you still need the Enhanced Merge code, consider archiving files under `docs/_archive/` before removal.

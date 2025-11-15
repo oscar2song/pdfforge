@@ -1,7 +1,7 @@
 # pdfforge/utils/file_manager.py
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional  # ADD THIS IMPORT
 
 
 class FilePathManager:
@@ -35,6 +35,7 @@ class FilePathManager:
         self.merge_dir.mkdir(parents=True, exist_ok=True)
         self.normalize_dir.mkdir(parents=True, exist_ok=True)
         self.compress_dir.mkdir(parents=True, exist_ok=True)
+        self.toc_dir.mkdir(parents=True, exist_ok=True)  # ADD TOC DIRECTORY
 
     @property
     def uploads_dir(self) -> Path:
@@ -64,12 +65,18 @@ class FilePathManager:
     def compress_dir(self) -> Path:
         return self.downloads_dir / "compress"
 
+    @property
+    def toc_dir(self) -> Path:  # ADD TOC DIRECTORY
+        return self.downloads_dir / "toc"
+
     def get_component_dir(self) -> Path:
         """Get the appropriate directory for the current component"""
         if self.component == "normalize":
             return self.normalize_dir
         elif self.component == "compress":
             return self.compress_dir
+        elif self.component == "toc":  # ADD TOC SUPPORT
+            return self.toc_dir
         else:  # merge or default
             return self.merge_dir
 

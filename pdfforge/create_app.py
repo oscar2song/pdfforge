@@ -1,5 +1,6 @@
 """
 Flask Application Factory
+UPDATED WITH TOC FEATURES
 """
 
 import logging
@@ -63,17 +64,24 @@ def register_blueprints(app):
     """Register Flask blueprints"""
     from .routes.cleanup import cleanup_bp
     from .routes.compress import compress_bp
-    from .routes.download import download_bp  # Add this import
+    from .routes.download import download_bp
     from .routes.main import main_bp
     from .routes.merge import merge_bp
     from .routes.normalize import normalize_bp
 
+    # TOC Features (NEW)
+    from .routes.toc import toc_bp
+
+    # Register existing blueprints
     app.register_blueprint(main_bp)
     app.register_blueprint(merge_bp)
     app.register_blueprint(normalize_bp)
     app.register_blueprint(compress_bp)
-    app.register_blueprint(download_bp)  # Add this registration
-    app.register_blueprint(cleanup_bp)  # Add this line
+    app.register_blueprint(download_bp)
+    app.register_blueprint(cleanup_bp)
+
+    # Register TOC blueprints (NEW)
+    app.register_blueprint(toc_bp)  # Standalone TOC Manager at /toc
 
 
 def configure_logging(app):

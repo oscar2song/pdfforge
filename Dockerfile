@@ -1,28 +1,40 @@
 # Dockerfile
-FROM python:3.9-slim
+# PDFForge container image
+# - Uses Gunicorn to run the Flask app factory
+# - Binds to port 8080 (browser-safe)
+
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Copy application code
-COPY app/ ./app/
-COPY requirements.txt .
+# Install system deps as needed (minimal base; extend if OCR or fonts need OS packages)
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     tesseract-ocr \
+#     && rm -rf /var/lib/apt/lists/*
 
-# Create external data directory
-RUN mkdir -p /opt/pdf-merge-app/data/uploads
-RUN mkdir -p /opt/pdf-merge-app/data/downloads
-RUN mkdir -p /opt/pdf-merge-app/data/temp
-RUN mkdir -p /opt/pdf-merge-app/logs
+# Copy dependency spec first to leverage Docker layer caching
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Set permissions
-RUN chmod -R 755 /opt/pdf-merge-app
+# Copy the rest of the project
+COPY . .
 
-# Install dependencies
-RUN pip install -r requirements.txt
+# Create external data/log directories (optional)
+RUN mkdir -p /opt/pdf-merge-app/data/uploads \
+    /opt/pdf-merge-app/data/downloads \
+    /opt/pdf-merge-app/data/temp \
+    /opt/pdf-merge-app/logs \
+ && chmod -R 755 /opt/pdf-merge-app
 
-# Set environment variables
-ENV PDF_APP_DATA_DIR=/opt/pdf-merge-app/data
-ENV FLASK_APP=app.main:create_app
+# Environment variables
+ENV PDF_APP_DATA_DIR=/opt/pdf-merge-app/data \
+    FLASK_APP=pdfforge.create_app:create_app \
+    PORT=8080
 
-EXPOSE 5000
+EXPOSE 8080
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app.main:create_app()"]
+# Use Gunicorn to serve the Flask app factory
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "pdfforge.create_app:create_app()"]
