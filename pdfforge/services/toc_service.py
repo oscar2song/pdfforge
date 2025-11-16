@@ -39,7 +39,13 @@ class TOCService:
             # Use PyMuPDF (fitz) for better compatibility
             pdf_doc = fitz.open(input_path)
 
-            # Extract bookmarks using TOCGenerator
+            # Detect existing TOC pages at the very beginning (for UI context)
+            try:
+                old_toc_pages_detected = self.toc_generator._detect_existing_toc_pages(pdf_doc)
+            except Exception:
+                old_toc_pages_detected = 0
+
+            # Extract bookmarks using TOCGenerator (already normalized to exclude old TOC pages)
             bookmarks = self.toc_generator.extract_bookmarks(pdf_doc)
 
             # Convert to dictionary format for JSON response
@@ -61,6 +67,7 @@ class TOCService:
                 "filename": original_filename,
                 "page_count": page_count,
                 "bookmarks": bookmarks_dict,
+                "old_toc_pages_detected": int(old_toc_pages_detected),
             }
 
         except Exception as e:

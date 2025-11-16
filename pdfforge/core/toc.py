@@ -57,6 +57,44 @@ class TOCGenerator:
     - Page overflow protection
     """
 
+    # --- Helper: detect existing TOC pages at the beginning of a PDF ---
+    def _detect_existing_toc_pages(self, pdf_doc: fitz.Document, scan_limit: int = 10) -> int:
+        """Heuristically detect consecutive TOC pages at the start of the document.
+
+        Strategy:
+        - Scan up to the first `scan_limit` pages.
+        - Count leading pages containing TOC keywords (case-insensitive):
+          "Table of Contents" or "Contents".
+        - Stop at the first page that doesn't match.
+        - Clamp result to [0, scan_limit].
+        """
+        try:
+            count = 0
+            toclike_seen = False
+            limit = min(scan_limit, len(pdf_doc))
+            for i in range(limit):
+                page = pdf_doc[i]
+                text = (page.get_text() or "").strip()
+                lower = text.lower()
+                has_keyword = (
+                    ("table of contents" in lower)
+                    or lower.startswith("contents\n")
+                    or lower == "contents"
+                    or "\ncontents\n" in lower
+                )
+                if has_keyword:
+                    count += 1
+                    toclike_seen = True
+                else:
+                    # If we already saw TOC-like pages and now it's not matching, stop.
+                    if toclike_seen:
+                        break
+                    # Otherwise, first page isn't TOC, stop immediately.
+                    break
+            return max(0, min(count, limit))
+        except Exception:
+            return 0
+
     def __init__(self, style: Optional[TOCStyle] = None):
         """
         Initialize TOC generator.
@@ -77,6 +115,11 @@ class TOCGenerator:
             List of bookmark entries with USER page numbers (1-based)
         """
         try:
+            # Detect existing TOC pages at the very beginning (if any)
+            old_toc_pages = self._detect_existing_toc_pages(pdf_doc)
+            if old_toc_pages:
+                print(f"Detected {old_toc_pages} existing TOC page(s) at document start; normalizing pages for UI")
+
             toc = pdf_doc.get_toc()
             bookmarks = []
 
@@ -98,10 +141,12 @@ class TOCGenerator:
                 if len(item) >= 3:  # Ensure we have [level, title, page]
                     level = item[0] - 1  # Convert to 0-based
                     title = item[1]
-                    page = item[2] - 1  # Convert to 1-based for user display
+                    # PyMuPDF TOC uses 1-based pages; subtract existing leading TOC pages for UI
+                    raw_page = int(item[2])
+                    page = max(1, raw_page - old_toc_pages)
 
                     bookmarks.append(BookmarkEntry(title=title, page=page, level=level))  # 1-based for UI
-                    print(f"Extracted bookmark: '{title}' -> page {page} (level {level})")
+                    print(f"Extracted bookmark: '{title}' -> raw {raw_page}, normalized {page} (level {level})")
 
             print(f"Extracted {len(bookmarks)} bookmarks from PDF")
             return bookmarks
@@ -166,7 +211,7 @@ class TOCGenerator:
         # Calculate approximate entries per page
         usable_height = page_height - self.style.margin_top - self.style.margin_bottom - 40  # 40 for title space
         entry_height = self.style.font_size * self.style.line_spacing
-        max_entries_per_page = int(usable_height / entry_height) - 2  # Safety margin
+        max_entries_per_page = max(1, int(usable_height / entry_height) - 2)  # Safety margin (clamped)
 
         # Split bookmarks across multiple pages if needed
         bookmark_pages = []
@@ -407,6 +452,33 @@ class TOCGenerator:
             pdf_doc = fitz.open(input_pdf_path)
             original_page_count = len(pdf_doc)
 
+            # Detect existing TOC pages before any changes
+            old_toc_pages = self._detect_existing_toc_pages(pdf_doc)
+            if old_toc_pages:
+                print(f"Existing TOC detected: {old_toc_pages} page(s) at document start")
+
+            # If caller provided bookmarks and they seem offset by old TOC pages, normalize defensively
+            if bookmarks is not None and len(bookmarks) > 0 and old_toc_pages > 0:
+                try:
+                    min_page = min(b.page for b in bookmarks)
+                except Exception:
+                    min_page = None
+                if isinstance(min_page, int) and min_page == 1 + old_toc_pages:
+                    print(
+                        "Normalizing provided bookmarks by subtracting old TOC pages ("
+                        f"{old_toc_pages}) so body starts at 1"
+                    )
+                    normalized = []
+                    for b in bookmarks:
+                        normalized.append(
+                            BookmarkEntry(
+                                title=b.title,
+                                page=max(1, b.page - old_toc_pages),
+                                level=b.level,
+                            )
+                        )
+                    bookmarks = normalized
+
             # === STEP 1: Remove old TOC pages if they exist ===
             pages_to_delete = []
             for page_num in range(min(10, len(pdf_doc))):
@@ -473,7 +545,7 @@ class TOCGenerator:
 
             print(f"Total pages after TOC insertion: {len(pdf_doc)}")
             entry_height = self.style.font_size * self.style.line_spacing
-            max_entries_per_page = int(usable_height / entry_height) - 2
+            max_entries_per_page = max(1, int(usable_height / entry_height) - 2)
 
             # Split bookmarks into pages
             bookmark_pages = []
@@ -519,10 +591,9 @@ class TOCGenerator:
 
                 # Create links only for bookmarks on THIS page
                 for i, bookmark in enumerate(page_bookmarks):
-                    # CORRECTED LOGIC:
-                    # User provides: bookmark.page = 1, 2, 3... (content pages)
-                    # After TOC insertion, content actually starts at page num_toc_pages (0-based)
-                    # So target page = num_toc_pages + (bookmark.page - 1)
+                    # User-facing content page numbers are 1-based.
+                    # After TOC insertion at beginning, actual target index is:
+                    #   target_page_index = num_toc_pages + (bookmark.page - 1)
                     target_page_index = num_toc_pages + (bookmark.page - 1)
 
                     # Safety check - ensure target page exists
@@ -559,13 +630,13 @@ class TOCGenerator:
             print("Fixing PDF bookmarks...")
             final_bookmarks = []
             for bookmark in bookmarks:
-                # Bookmarks point to ACTUAL PDF pages (after TOC insertion)
-                # Same calculation as for links
-                actual_pdf_page = num_toc_pages + bookmark.page  # This is the key fix!
+                # Standardized logic: bookmark.page is user-facing (1-based) content page number
+                # PDF bookmarks are 1-based and must include TOC offset at the front
+                actual_pdf_page = num_toc_pages + bookmark.page
                 final_bookmarks.append(
                     BookmarkEntry(
                         title=bookmark.title,
-                        page=actual_pdf_page,  # Use actual PDF page number after TOC insertion
+                        page=actual_pdf_page,
                         level=bookmark.level,
                     )
                 )
@@ -725,14 +796,8 @@ class BookmarkManager:
                 else:
                     label = BookmarkManager.create_bookmark_from_filename(pdf_path, current_page + 1).title
 
-                # Adjust page numbers if TOC will be added at beginning
-                page_offset = 0
-                if add_toc:
-                    # Estimate TOC pages (will be adjusted later)
-                    estimated_toc_pages = max(1, len(pdf_files) // 40 + 1)
-                    page_offset = estimated_toc_pages
-
-                bookmarks.append(BookmarkEntry(title=label, page=current_page + 1 + page_offset, level=0))
+                # Use user-facing content page numbers (1-based); do not include TOC pages here
+                bookmarks.append(BookmarkEntry(title=label, page=current_page + 1, level=0))
 
                 current_page += len(src_doc)
                 src_doc.close()

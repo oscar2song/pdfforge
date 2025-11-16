@@ -225,3 +225,28 @@ This release represents a complete rewrite of PDFForge with a modern, modular ar
 
 ### Notes
 - If you still need the Enhanced Merge code, consider archiving files under `docs/_archive/` before removal.
+
+
+## [2.2.1] - 2025-11-15
+
+### Fixed
+- Type checking errors in `pdfforge/core/toc.py` (replaced `any` with `typing.Any`, corrected numeric field types, accurate return annotations).
+- Linting issues in `pdfforge/core/toc.py` and `pdfforge/services/toc_service.py` (removed unused imports, replaced bare `except:`, wrapped long debug line).
+
+### Internal
+- Ensured all quality checks pass: tests, mypy, flake8, black, and isort.
+- Minor refactors to keep style consistent (explicit `float` arithmetic for positions; clarified optional types).
+
+
+## [2.2.2] - 2025-11-15
+
+### Added
+- Unit tests for TOC detection helper and bookmark extraction normalization (`tests/test_toc_core.py`).
+- Integration tests for multi-page TOC generation, old TOC removal, link target and outline mapping (`tests/test_toc_integration.py`).
+- Documentation section "Existing TOC detection & normalization" explaining behavior and calculations (`docs/TOC.md`).
+
+### Fixed
+- Correct handling when PDFs already contain TOC pages: extracted bookmarks in the UI now start from 1 (body pages only). Defensive normalization in `add_toc_to_pdf(...)` ensures incoming pages are adjusted if offset by existing TOC pages.
+
+### Internal
+- Ensured tests are lightweight and use in-memory/synthetic PDFs via PyMuPDF for reliability.

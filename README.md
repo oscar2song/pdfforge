@@ -72,6 +72,8 @@ pdfforge/
 
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture documentation.
 
+For TOC generation and customization details, see the TOC guide: [docs/TOC.md](docs/TOC.md).
+
 ## 🚀 Quick Start
 
 ### Prerequisites
