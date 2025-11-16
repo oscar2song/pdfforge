@@ -265,26 +265,24 @@ class SplitManager {
     }
 
     renderResult(result) {
-        const { files_created = 0, split_type, output_files = [], zip_filename, download_url, component_download_url, file_id } = result;
+        const { files_created = 0, split_type, download_urls = [], zip_filename, component_download_url, file_id } = result;
         this.resultInfo.innerHTML = `
             <p><strong>Method:</strong> ${split_type}</p>
             <p><strong>Files created:</strong> ${files_created}</p>
         `;
 
-        // Download links
+        // Download links (component-aware only)
         const links = [];
-        if (zip_filename && download_url) {
-            links.push(`<a class="btn btn-success" href="${download_url}">Download ZIP (${zip_filename})</a>`);
+        if (zip_filename && component_download_url) {
+            links.push(`<a class="btn btn-success" href="${component_download_url}">Download ZIP (${zip_filename})</a>`);
         }
-        if (component_download_url) {
-            links.push(`<a class="btn btn-primary" href="${component_download_url}">Open in Downloads</a>`);
-        }
-        if (output_files && output_files.length) {
-            const listItems = output_files.map((f, i) => `<li>Part ${i + 1}: <code>${f}</code></li>`).join('');
-            links.push(`<div class="info-box"><p>Output files (paths):</p><ul>${listItems}</ul></div>`);
+        if (Array.isArray(download_urls) && download_urls.length) {
+            download_urls.forEach((u, i) => {
+                links.push(`<a class="btn btn-link" href="${u}">Download part ${i + 1}</a>`);
+            });
         }
         if (!links.length && file_id) {
-            links.push(`<a class="btn btn-primary" href="/download/component/split/${file_id}">Download Result(s)</a>`);
+            links.push(`<a class="btn btn-primary" href="/download/component/split/${file_id}">Open result</a>`);
         }
         this.downloadLinks.innerHTML = links.join(' ');
     }

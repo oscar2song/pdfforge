@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+<style>
+  .tool-page .option-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .tool-page .form-row label { display:block; margin-bottom:6px; font-weight:600; }
+  .tool-page .form-row input[type="text"],
+  .tool-page .form-row input[type="number"],
+  .tool-page .form-row select { width:100%; }
+  .result-list { margin-top: 10px; }
+  .result-list a { display:block; margin-bottom:6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tool-page">
+  <h1>PDF → Word (DOCX)</h1>
+  <p class="page-description">Convert a PDF into an editable Word document. Free mode targets digital PDFs. Premium mode (via SaaS) can OCR scanned PDFs and offer layout overlay.</p>
+
+  <div class="tool-interface">
+    <!-- Upload -->
+    <div class="upload-section">
+      <h3>Upload PDF</h3>
+      <div class="upload-area" id="wordUploadArea" role="button" tabindex="0" aria-label="Upload PDF by click or drag & drop">
+        <input type="file" id="wordFileInput" accept=".pdf" style="display:none;">
+        <div class="upload-placeholder">
+          <p>Drag & drop a PDF here or click to browse</p>
+        </div>
+        <button type="button" id="wordSelectBtn" class="btn btn-secondary">Select File</button>
+      </div>
+      <div id="wordFileList" class="file-list"></div>
+    </div>
+
+    <!-- Options -->
+    <div class="options-section">
+      <h3>Options</h3>
+      <div class="option-grid">
+        <div class="form-row">
+          <label for="pageRange">Page range</label>
+          <input type="text" id="pageRange" placeholder="e.g. 1-5 (leave blank for all)">
+        </div>
+        <div class="form-row">
+          <label for="mergeParagraphs">Merge paragraphs</label>
+          <select id="mergeParagraphs" class="form-select">
+            <option value="true" selected>True</option>
+            <option value="false">False</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="detectTables">Detect tables</label>
+          <select id="detectTables" class="form-select">
+            <option value="true" selected>True</option>
+            <option value="false">False</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="keepTextBoxes">Keep text boxes</label>
+          <select id="keepTextBoxes" class="form-select">
+            <option value="false" selected>False</option>
+            <option value="true">True</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="imagesAsBackground">Images as background</label>
+          <select id="imagesAsBackground" class="form-select">
+            <option value="false" selected>False</option>
+            <option value="true">True</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="keepImagesOriginal">Keep images original</label>
+          <select id="keepImagesOriginal" class="form-select">
+            <option value="false" selected>False</option>
+            <option value="true">True</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="imageDpi">Image DPI</label>
+          <input type="number" id="imageDpi" min="72" step="1" value="150">
+        </div>
+      </div>
+
+      <div class="option-grid" style="margin-top:10px;">
+        <div class="form-row">
+          <label for="usePremium">Use Premium (SaaS)</label>
+          <select id="usePremium" class="form-select">
+            <option value="auto" selected>Auto (OCR if scanned)</option>
+            <option value="true">Force premium</option>
+            <option value="false">Free only</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="enableOcr">OCR</label>
+          <select id="enableOcr" class="form-select">
+            <option value="true" selected>True</option>
+            <option value="false">False</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="overlayMode">Overlay fallback (layout)</label>
+          <select id="overlayMode" class="form-select">
+            <option value="false" selected>False</option>
+            <option value="true">True</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="languages">OCR languages (comma separated)</label>
+          <input type="text" id="languages" placeholder="eng,chi_sim,fra" value="eng,chi_sim,fra">
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-section">
+      <button id="analyzeBtn" class="btn btn-secondary" disabled>Analyze</button>
+      <button id="convertBtn" class="btn btn-primary btn-large" disabled>Convert to DOCX</button>
+      <button id="resetBtn" class="btn btn-link">Reset</button>
+    </div>
+
+    <!-- Analysis -->
+    <div id="analysisSection" class="result-section" style="display:none;">
+      <h3>Analysis</h3>
+      <div id="analysisInfo"></div>
+    </div>
+
+    <!-- Result -->
+    <div id="resultSection" class="result-section" style="display:none;">
+      <h3>Conversion Result</h3>
+      <div id="resultInfo"></div>
+      <div id="downloadLinks" class="result-list"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/word.js') }}"></script>
+{% endblock %}

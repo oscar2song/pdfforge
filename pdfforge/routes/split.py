@@ -98,8 +98,8 @@ def process_split():
                 "output_dir": result.get("output_dir"),
                 "output_files": result.get("output_files", []),
                 "zip_filename": result.get("zip_filename"),
-                "download_url": f"/download/{result['zip_filename']}" if result.get("zip_filename") else None,
                 "component_download_url": result.get("component_download_url"),
+                "download_urls": result.get("download_urls"),
                 "file_id": result.get("file_id"),
                 "split_type": result.get("split_type"),
             }

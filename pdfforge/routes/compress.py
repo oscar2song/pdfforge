@@ -154,10 +154,17 @@ def compress_pdf():
             result = compress_service.compress_file(file_config, data.get("options", {}))
 
         if result["success"]:
+            # Build component-aware download URL using file_id from file_path
+            try:
+                from pathlib import Path
+                file_id = Path(result.get("file_path", "")).stem if result.get("file_path") else None
+            except Exception:
+                file_id = None
             response_data = {
                 "success": True,
-                "download_url": f"/download/{result['filename']}",
-                "output_filename": result["filename"],
+                "download_url": (f"/download/component/compress/{file_id}" if file_id else None),
+                "output_filename": result.get("filename"),
+                "file_id": file_id,
             }
 
             # Add compression stats if available (use get() to avoid KeyError)
@@ -180,6 +187,26 @@ def compress_pdf():
                     response_data["total_savings_mb"] = result["total_savings"] / (1024 * 1024)
                 if "results" in result:
                     response_data["results"] = result["results"]
+                    # Build per-file component-aware URLs
+                    try:
+                        from pathlib import Path
+                        per_file_urls = []
+                        for item in result["results"]:
+                            stem = Path(item.get("file_path", "")).stem if item.get("file_path") else None
+                            if stem:
+                                per_file_urls.append(f"/download/component/compress/{stem}")
+                        if per_file_urls:
+                            response_data["download_urls"] = per_file_urls
+                    except Exception:
+                        pass
+                # If a ZIP was produced (final output is a zip), expose component download URL
+                try:
+                    if isinstance(result.get("file_path"), str) and result.get("file_path").lower().endswith('.zip'):
+                        zip_id = Path(result["file_path"]).stem
+                        response_data["component_download_url"] = f"/download/component/compress/{zip_id}"
+                        response_data["zip_filename"] = result.get("filename")
+                except Exception:
+                    pass
 
             return jsonify(response_data)
         else:

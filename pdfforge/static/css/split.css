@@ -4,10 +4,12 @@
    additional layout, spacing, and state styles unique to splitting workflows. */
 
 /* Page title and description tweaks */
-.tool-page h1 {
+.tool-page > h1 {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+  text-align: center;
 }
 
 /* Upload area refinements (single-file focus) */

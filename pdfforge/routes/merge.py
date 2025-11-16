@@ -84,7 +84,6 @@ def merge_pdfs():
             response_data = {
                 "success": True,
                 "download_url": f"/download/component/merge/{result['file_id']}",
-                "download_url_legacy": f"/download/{result['filename']}",  # For backward compatibility
                 "output_filename": result["filename"],
                 "page_count": result.get("page_count", 0),
                 "file_count": result.get("file_count", len(data["files"])),

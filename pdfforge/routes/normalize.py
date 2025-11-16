@@ -85,7 +85,6 @@ def normalize_pdf():
             response_data = {
                 "success": True,
                 "download_url": f"/download/component/normalize/{result['file_id']}",
-                "download_url_legacy": f"/download/{result['filename']}",  # Backward compatibility
                 "output_filename": result["filename"],
                 "page_count": result.get("page_count", 0),
                 "target_size": result.get("target_size", ""),

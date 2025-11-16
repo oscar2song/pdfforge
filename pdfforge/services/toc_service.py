@@ -332,17 +332,16 @@ class MergeWithTOCService:
             if len(valid_paths) < 2:
                 return {"success": False, "error": "At least 2 valid PDF files required"}
 
-            # Generate output filename using file manager
+            # Generate output filename using file manager and unified convention
+            token = "toc" if add_toc else "merged"
             if output_filename:
-                if not output_filename.endswith(".pdf"):
-                    output_filename += ".pdf"
-                # Use file manager to ensure unique filename
+                # Respect provided base name but enforce convention and .pdf extension
                 base_name = Path(output_filename).stem
-                output_filename = self.file_manager.generate_output_filename(base_name, "merged")
+                output_filename = self.file_manager.generate_output_filename(base_name + ".pdf", token)
             else:
                 # Use first file as base
                 base_name = Path(filenames[0]).stem
-                output_filename = self.file_manager.generate_output_filename(base_name, "merged")
+                output_filename = self.file_manager.generate_output_filename(base_name + ".pdf", token)
 
             # Get output path in component directory
             output_path = self.file_manager.get_download_path(output_filename)
