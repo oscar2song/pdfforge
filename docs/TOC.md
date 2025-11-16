@@ -90,6 +90,34 @@ The generator splits bookmarks across multiple TOC pages based on available vert
 - Bookmarks are sliced into batches per page.
 - First page shows the title and a separator line; subsequent pages show a continuation header.
 
+## Three‑Column TOC Layout and Title Wrapping
+
+The TOC rows use a professional three‑column layout that prevents long titles from overflowing the margins:
+
+- Left column: Title text. Long titles automatically wrap into multiple lines within the available width.
+- Middle (optional): Leader dots. When `leader_dots=True`, dotted leaders are drawn along the last title line’s baseline toward the page number column.
+- Right column: Page number, right‑aligned. The column reserves width for up to 4–5 digits, keeping alignment consistent.
+
+The columns adapt to the detected page size (Letter, A4, etc.) by measuring the page width and font metrics at runtime. The clickable link rectangle for each TOC entry spans the full wrapped block so clicking anywhere on the entry jumps to the correct destination.
+
+### New `TOCStyle` fields for layout
+
+```
+@dataclass
+class TOCStyle:
+    inter_col_gap: int = 12              # gap between title and page number columns
+    page_number_reserve_digits: int = 5  # reserve width for up to N digits
+    dot_spacing: int = 8                 # spacing between leader dots (points)
+    dot_radius: float = 0.5              # radius for each dot
+    leader_dots: bool = False            # enable/disable dotted leaders
+```
+
+Notes:
+- The layout respects existing margins: `margin_left`, `margin_right`, and `indent_per_level` for nested entries.
+- `page_number_reserve_digits` keeps page numbers neatly aligned even for large documents.
+- When `leader_dots` is enabled, the dots won’t intrude into the page‑number reserve column.
+- Link targets and PDF outline calculations remain unchanged (see formulas above).
+
 ## Roman Numerals on TOC Pages
 
 TOC pages use Roman numerals (e.g., `i, ii, iii, ...`) drawn at the position specified by `page_number_position` with `page_number_font_size`.

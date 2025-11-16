@@ -21,7 +21,7 @@ class TOCStyle:
     title_font_size: int = 18
     show_page_numbers: bool = True
     indent_per_level: int = 20
-    leader_dots: bool = False  # Simplified layout like merge.py
+    leader_dots: bool = False  # Draw dotted leaders between title and page number
     line_spacing: float = 1.67  # 20px line height for 12pt font
     margin_top: int = 80  # Match merge.py
     margin_left: int = 60  # Match merge.py (entries at x=60)
@@ -30,8 +30,13 @@ class TOCStyle:
     # Separator line boundaries (matching merge.py)
     separator_left: float = 50.0
     separator_right: float = 562.0  # For 612pt width pages
-    page_number_x: float = 500.0  # Match merge.py
-    # NEW: Page number position for TOC pages
+    page_number_x: float = 500.0  # Legacy; dynamic layout will compute actual position
+    # NEW: Column/layout controls
+    inter_col_gap: int = 12  # gap between title and page number columns
+    page_number_reserve_digits: int = 5  # reserve width for up to 5 digits
+    dot_spacing: int = 8  # spacing between leader dots (in points)
+    dot_radius: float = 0.5  # radius of each leader dot
+    # NEW: Page number position for TOC pages (Roman numerals on TOC pages)
     page_number_position: str = "bottom-center"  # "top-center", "bottom-center", "top-right", "bottom-right"
     page_number_font_size: int = 11
 
@@ -254,7 +259,10 @@ class TOCGenerator:
         total_pages: int = 1,
         num_toc_pages: int = 1,
     ):
-        """Draw TOC content on page with clickable links."""
+        """Draw TOC content on page with clickable links.
+        Uses three-column layout with wrapping title column, optional leader dots, and right-aligned page numbers.
+        Returns the final y-position (unused by caller currently).
+        """
         y_position: float = float(self.style.margin_top)
 
         # Draw title only on first page
@@ -269,7 +277,6 @@ class TOCGenerator:
         # Draw bookmark entries with clickable links
         for bookmark in bookmarks:
             y_position = self._draw_bookmark_entry(page, bookmark, y_position, num_toc_pages)
-            y_position += self.style.font_size * self.style.line_spacing
 
     def _draw_title(self, page: fitz.Page, y_position: float) -> float:
         """Draw TOC title with separator line matching merge.py."""
@@ -321,44 +328,142 @@ class TOCGenerator:
     def _draw_bookmark_entry(
         self, page: fitz.Page, bookmark: BookmarkEntry, y_position: float, num_toc_pages: int = 0
     ) -> float:
-        """Draw a single bookmark entry WITHOUT adjusting page numbers."""
-        # Calculate indentation
-        indent = self.style.margin_left + (bookmark.level * self.style.indent_per_level)
+        """Draw a single bookmark entry with three-column layout and wrapping.
 
-        # Prepare text - USE USER PAGE NUMBERS (no adjustment needed)
+        - Left column: title (wrapped within available width)
+        - Middle: optional leader dots (on the last line baseline)
+        - Right column: page number, right-aligned, 4-5 digit reserve
+        Returns the next y-position (after this entry's block).
+        """
+        # Compute columns for this bookmark level
+        cols = self._compute_columns(page, bookmark.level)
+        title_left = cols["title_left"]
+        title_right = cols["title_right"]
+        page_col_left = cols["page_col_left"]
+        page_col_right = cols["page_col_right"]
+        max_title_width = max(10.0, title_right - title_left)
+
+        # Wrap title text
         title_text = bookmark.title
-        page_text = str(bookmark.page) if self.style.show_page_numbers else ""
+        lines = self._wrap_text_to_width(title_text, max_title_width)
+        line_height = self.style.font_size * self.style.line_spacing
 
-        # Draw title at left side
-        page.insert_text(
-            fitz.Point(indent, y_position), title_text, fontsize=self.style.font_size, fontname="helv", color=(0, 0, 0)
-        )
-
-        if self.style.show_page_numbers:
-            # Draw page number at consistent right position - SHOW USER PAGE NUMBER
+        # Draw wrapped lines
+        baseline_y = y_position
+        last_line_end_x = title_left
+        for line in lines:
             page.insert_text(
-                fitz.Point(self.style.page_number_x, y_position),
+                fitz.Point(title_left, baseline_y),
+                line,
+                fontsize=self.style.font_size,
+                fontname=self.style.font_name,
+                color=(0, 0, 0),
+            )
+            line_width = fitz.get_text_length(line, fontname=self.style.font_name, fontsize=self.style.font_size)
+            last_line_end_x = title_left + line_width
+            baseline_y += line_height
+
+        # Align page number on the last line's baseline
+        if self.style.show_page_numbers:
+            page_text = str(bookmark.page)
+            pn_width = fitz.get_text_length(page_text, fontname=self.style.font_name, fontsize=self.style.font_size)
+            pn_x = max(page_col_left, page_col_right - pn_width)
+            pn_y = baseline_y - line_height  # baseline of last line
+            page.insert_text(
+                fitz.Point(pn_x, pn_y),
                 page_text,
                 fontsize=self.style.font_size,
-                fontname="helv",
+                fontname=self.style.font_name,
                 color=(0, 0, 0),
             )
 
-        # NOTE: Links are created separately
-        return y_position
+            # Optional leader dots from end of last title line to page number column
+            if self.style.leader_dots:
+                dots_start = max(title_left, last_line_end_x + 6)
+                dots_end = max(dots_start, page_col_left - 4)
+                if dots_end - dots_start > 4:
+                    self._draw_leader_dots(page, dots_start, pn_y, dots_end)
+
+        # Next y position after the block
+        next_y = y_position + max(1, len(lines)) * line_height
+        return next_y
+
+    def _compute_columns(self, page: fitz.Page, level: int) -> Dict[str, float]:
+        """Compute three-column layout bounds based on page width and style.
+
+        Returns dict with: title_left, title_right, page_col_left, page_col_right.
+        """
+        page_width = page.rect.width
+        page_col_right = page_width - self.style.margin_right
+
+        # Reserve width for page numbers (up to N digits) plus small padding
+        reserve_digits = max(3, int(self.style.page_number_reserve_digits))
+        reserve_sample = "8" * reserve_digits
+        reserve_width = fitz.get_text_length(
+            reserve_sample, fontname=self.style.font_name, fontsize=self.style.font_size
+        )
+        padding = 6
+        page_col_left = page_col_right - reserve_width - padding
+
+        title_left = self.style.margin_left + (level * self.style.indent_per_level)
+        title_right = max(title_left + 20, page_col_left - max(6, int(self.style.inter_col_gap)))
+        return {
+            "title_left": float(title_left),
+            "title_right": float(title_right),
+            "page_col_left": float(page_col_left),
+            "page_col_right": float(page_col_right),
+        }
+
+    def _wrap_text_to_width(self, text: str, max_width: float) -> List[str]:
+        """Greedy word wrap using text measurement. Falls back to character wrap for long words."""
+        if max_width <= 10:
+            return [text]
+        words = text.split()
+        if not words:
+            return [""]
+        lines: List[str] = []
+        current = words[0]
+        for w in words[1:]:
+            candidate = current + " " + w
+            width = fitz.get_text_length(candidate, fontname=self.style.font_name, fontsize=self.style.font_size)
+            if width <= max_width:
+                current = candidate
+            else:
+                # push current and start new
+                lines.append(current)
+                # if single word exceeds width, split by chars
+                if fitz.get_text_length(w, fontname=self.style.font_name, fontsize=self.style.font_size) > max_width:
+                    chunk = ""
+                    for ch in w:
+                        chunk_candidate = chunk + ch
+                        if (
+                            fitz.get_text_length(
+                                chunk_candidate, fontname=self.style.font_name, fontsize=self.style.font_size
+                            )
+                            <= max_width
+                        ):
+                            chunk = chunk_candidate
+                        else:
+                            if chunk:
+                                lines.append(chunk)
+                            chunk = ch
+                    current = chunk if chunk else w
+                else:
+                    current = w
+        lines.append(current)
+        return lines
 
     def _draw_leader_dots(self, page: fitz.Page, start_x: float, y: float, end_x: float):
         """Draw leader dots between title and page number."""
-        dot_spacing = 8
+        dot_spacing = max(4, int(self.style.dot_spacing))
+        radius = max(0.3, float(self.style.dot_radius))
         current_x = start_x
-
+        # Ensure we don't draw into the page number reserve column
         while current_x < end_x:
-            # Draw a dot
             shape = page.new_shape()
-            shape.draw_circle(fitz.Point(current_x, y), 0.5)
+            shape.draw_circle(fitz.Point(current_x, y), radius)
             shape.finish(color=(0, 0, 0), fill=(0, 0, 0))
             shape.commit()
-
             current_x += dot_spacing
 
     def _add_roman_page_number(
@@ -604,10 +709,19 @@ class TOCGenerator:
                         print(f"Warning: Target page {target_page_index + 1} is negative")
                         continue
 
-                    # Create clickable area
-                    link_rect = fitz.Rect(
-                        self.style.separator_left, y_position - 8, self.style.separator_right, y_position + 12
-                    )
+                    # Determine wrapped height for this entry to set link rectangle
+                    cols = self._compute_columns(page, bookmark.level)
+                    max_title_width = max(10.0, cols["title_right"] - cols["title_left"])
+                    lines = self._wrap_text_to_width(bookmark.title, max_title_width)
+                    line_height = self.style.font_size * self.style.line_spacing
+                    block_height = max(1, len(lines)) * line_height
+
+                    # Create clickable area spanning the full entry block height
+                    link_top = y_position - 8
+                    link_bottom = y_position + block_height - 4
+                    link_left = self.style.separator_left
+                    link_right = self.style.separator_right
+                    link_rect = fitz.Rect(link_left, link_top, link_right, link_bottom)
 
                     # Insert link - point to CORRECT PDF page
                     page.insert_link(
@@ -624,7 +738,8 @@ class TOCGenerator:
                     msg_right = f"links to PDF page {target_page_index + 1}"
                     print(msg_left + msg_right)
 
-                    y_position += self.style.font_size * self.style.line_spacing
+                    # Advance y-position by the height of the wrapped block
+                    y_position += block_height
 
             # Step 6B: Fix PDF bookmarks - they should point to ACTUAL page numbers after TOC insertion
             print("Fixing PDF bookmarks...")

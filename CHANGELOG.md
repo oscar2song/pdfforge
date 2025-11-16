@@ -250,3 +250,18 @@ This release represents a complete rewrite of PDFForge with a modern, modular ar
 
 ### Internal
 - Ensured tests are lightweight and use in-memory/synthetic PDFs via PyMuPDF for reliability.
+
+
+## [2.2.3] - 2025-11-15
+
+### Added
+- Three-column TOC layout with automatic title wrapping so long titles never overflow margins.
+- Functional leader dots option between titles and page numbers; page numbers are right-aligned with a fixed reserve width.
+- Documentation updates describing the new layout and `TOCStyle` fields (`docs/TOC.md`).
+- Targeted tests for wrapping, column computation, and leader dots behavior (`tests/test_toc_layout.py`).
+
+### Changed
+- TOC link rectangles now span the full wrapped entry block, improving clickability for multi-line entries.
+
+### Internal
+- Minor refactors in `pdfforge/core/toc.py` to support wrapping and layout helpers; no breaking API changes.
