@@ -7,21 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2025-11-15
+
 ### Added
 - PDF Split feature with multiple methods: by page ranges, fixed page count, approximate max file size, and bookmarks.
 - Web UI for Split at `/split/` with live validation and analysis.
 - Dedicated stylesheet `static/css/split.css` and front-end logic in `static/js/split.js`.
 - Backend service `SplitService`, core logic `PDFSplitterCore`, and routes under `/split`.
 - Download routes updated to recognize the `split` component; ZIP auto-creation for multi-part results.
+- Home page `tool-card` for Split.
 
 ### Changed
 - Navigation updated to include Split tool.
 - `FilePathManager` now provisions a `downloads/split` directory and supports component-based paths.
-- Documentation structure prepared for Split guide and API examples.
+- Documentation expanded: `docs/SPLIT.md`, Split API section in `docs/API.md`, README features.
 
 ### Fixed
 - UI: “Split PDF” button now enables immediately when inputs become valid (no extra click needed).
-- Accept shorthand page-ranges like `"1,63"` meaning `1-62` and `63-end`.
+- Split ranges: Accept shorthand start-pages like "1,63" → contiguous ranges (`1-62`, `63-end`).
 
 ## [2.1.0] - 2025-11-03
 

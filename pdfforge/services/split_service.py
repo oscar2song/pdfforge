@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from ..core.split import PDFSplitterCore
-from ..exceptions.pdf_exceptions import PDFSplitError
 from ..utils.file_manager import FilePathManager, get_file_manager
 from ..utils.file_utils import create_zip_archive
 
@@ -71,9 +70,7 @@ class SplitService:
             zip_filename = f"{base_name}_split.zip"
             zip_path = None
             if files_created > 1:
-                files_for_zip = [
-                    {"path": f, "filename": Path(f).name} for f in output_files if os.path.exists(f)
-                ]
+                files_for_zip = [{"path": f, "filename": Path(f).name} for f in output_files if os.path.exists(f)]
                 zip_path = create_zip_archive(files_for_zip, zip_filename, component="split")
 
             payload: Dict[str, Any] = {

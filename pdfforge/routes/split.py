@@ -5,7 +5,6 @@ Split Routes - HTTP endpoints for PDF splitting
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 from flask import Blueprint, jsonify, render_template, request
 from werkzeug.utils import secure_filename
@@ -30,10 +29,9 @@ def split_page():
         # If a template exists, render it; otherwise, return simple info
         return render_template("split.html")
     except Exception:
-        return jsonify({
-            "success": True,
-            "message": "Split API is available. Use POST /split/upload then /split/process."
-        })
+        return jsonify(
+            {"success": True, "message": "Split API is available. Use POST /split/upload then /split/process."}
+        )
 
 
 @split_bp.route("/upload", methods=["POST"])
@@ -51,11 +49,13 @@ def upload_file():
             return jsonify({"success": False, "error": "Only PDF files are allowed"}), 400
 
         file_path = save_uploaded_file(file)
-        return jsonify({
-            "success": True,
-            "file_path": file_path,
-            "filename": secure_filename(file.filename),
-        })
+        return jsonify(
+            {
+                "success": True,
+                "file_path": file_path,
+                "filename": secure_filename(file.filename),
+            }
+        )
     except Exception as e:
         logger.exception("Upload error in split")
         return jsonify({"success": False, "error": "Upload failed: " + str(e)}), 500

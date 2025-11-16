@@ -10,8 +10,8 @@ from .pdf_exceptions import (
     PDFNormalizationError,
     PDFOCRError,
     PDFPermissionError,
-    PDFValidationError,
     PDFSplitError,
+    PDFValidationError,
 )
 from .validation_exceptions import (
     FileValidationError,

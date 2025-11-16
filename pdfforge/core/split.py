@@ -1,14 +1,15 @@
 """
 Core PDF splitting logic using PyPDF2.
 """
+
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 try:
     from PyPDF2 import PdfReader, PdfWriter
+
     HAS_PDF_DEPS = True
 except Exception:
     HAS_PDF_DEPS = False
@@ -120,7 +121,7 @@ class PDFSplitterCore:
             ranges = self._parse_page_ranges(page_ranges)
 
         output_files: List[str] = []
-        for (start, end) in ranges:
+        for start, end in ranges:
             if start < 1 or end > total_pages or end < start:
                 raise PDFSplitError(f"Invalid page range {start}-{end} for {total_pages} pages")
             writer = PdfWriter()
