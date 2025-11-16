@@ -48,11 +48,13 @@ def upload_file():
             return jsonify({"success": False, "error": "Only PDF files are allowed"}), 400
 
         file_path = save_uploaded_file(file)
-        return jsonify({
-            "success": True,
-            "file_path": file_path,
-            "filename": secure_filename(file.filename),
-        })
+        return jsonify(
+            {
+                "success": True,
+                "file_path": file_path,
+                "filename": secure_filename(file.filename),
+            }
+        )
     except Exception as e:
         logger.exception("Upload error in word")
         return jsonify({"success": False, "error": "Upload failed: " + str(e)}), 500
@@ -96,14 +98,16 @@ def process_word():
         if result.get("success"):
             response = {
                 "success": True,
-                "output_files": result.get("output_files") or ([result.get("output_file")] if result.get("output_file") else []),
+                "output_files": result.get("output_files")
+                or ([result.get("output_file")] if result.get("output_file") else []),
                 "files_created": result.get("files_created", 1 if result.get("output_file") else 0),
                 "zip_filename": result.get("zip_filename"),
                 # Component-aware URL for ZIP (canonical)
                 "download_url": result.get("component_download_url"),
                 "component_download_url": result.get("component_download_url"),
                 # Per-file component-aware URLs if available
-                "download_urls": result.get("download_urls") or ([result.get("download_url")] if result.get("download_url") else None),
+                "download_urls": result.get("download_urls")
+                or ([result.get("download_url")] if result.get("download_url") else None),
                 "file_id": result.get("file_id"),
             }
             return jsonify(response)

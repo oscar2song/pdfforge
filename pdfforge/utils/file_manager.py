@@ -104,7 +104,9 @@ class FilePathManager:
     def get_temp_path(self, filename: str) -> Path:
         return self.temp_dir / filename
 
-    def generate_output_filename(self, original_name: str, operation: str, suffix: str = "", ext_override: str | None = None) -> str:
+    def generate_output_filename(
+        self, original_name: str, operation: str, suffix: str = "", ext_override: str | None = None
+    ) -> str:
         """Generate consistent output filenames across all components
         Pattern: yyyyMMdd_HHmmss_OriginalFileName_ACTION.ext
         - original_name: source filename or base

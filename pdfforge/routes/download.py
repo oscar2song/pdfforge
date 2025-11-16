@@ -97,7 +97,9 @@ def download_file(filename):
     """Download a processed file - UPDATED with file manager"""
     current_app.logger.info("🎯 MAIN DOWNLOAD ROUTE EXECUTING!")
     current_app.logger.info(f"Requested filename: {filename}")
-    current_app.logger.warning("Legacy download route '/download/<filename>' used. Prefer '/download/component/<component>/<file_id>'")
+    current_app.logger.warning(
+        "Legacy download route '/download/<filename>' used. Prefer '/download/component/<component>/<file_id>'"
+    )
 
     try:
         file_path = find_file_anywhere(filename)

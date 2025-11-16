@@ -9,13 +9,14 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
+
+from PyPDF2 import PdfReader  # type: ignore
 
 from ..core.convert_word import WordConversionOptions, convert_pdf_to_docx
 from ..utils.file_manager import FilePathManager, get_file_manager
 from ..utils.file_utils import create_zip_archive
 from ..utils.premium_client import PremiumWordClient
-from PyPDF2 import PdfReader  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -152,16 +153,16 @@ class WordService:
             if not result.get("success"):
                 return result
 
-            out_file = result.get("output_file")
-            file_id = Path(out_file).stem if out_file else None
-            download_url = f"/download/component/word/{file_id}" if file_id else None
+            out_file_path = cast(Optional[str], result.get("output_file"))
+            out_file_id = Path(out_file_path).stem if out_file_path else None
+            out_download_url = f"/download/component/word/{out_file_id}" if out_file_id else None
 
             payload = {
                 "success": True,
-                "output_file": out_file,
+                "output_file": out_file_path,
                 "pages_converted": result.get("pages_converted", 0),
-                "file_id": file_id,
-                "download_url": download_url,
+                "file_id": out_file_id,
+                "download_url": out_download_url,
             }
             return payload
         except Exception as e:

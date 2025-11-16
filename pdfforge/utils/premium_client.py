@@ -23,15 +23,15 @@ Endpoint contract (expected on SaaS, default base http://localhost:5003):
 
 This client downloads the resulting DOCX into downloads/word when a relative URL is returned.
 """
+
 from __future__ import annotations
 
-import io
 import json
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional, cast
 
-import requests
+import requests  # type: ignore[import-untyped]
 from flask import current_app
 
 from .file_manager import get_file_manager
@@ -46,15 +46,18 @@ class PremiumConfig:
 
     @staticmethod
     def from_env_or_app() -> "PremiumConfig":
+        cfg: Mapping[str, Any]
         try:
-            cfg = current_app.config  # type: ignore[attr-defined]
+            cfg = cast(Mapping[str, Any], current_app.config)  # type: ignore[attr-defined]
         except Exception:
-            cfg = {}
+            cfg = cast(Mapping[str, Any], {})
         enabled = bool(
             str(cfg.get("WORD_PREMIUM_ENABLED", os.environ.get("WORD_PREMIUM_ENABLED", "false"))).lower()
             in ("1", "true", "yes")
         )
-        base_url = str(cfg.get("WORD_PREMIUM_BASE_URL", os.environ.get("WORD_PREMIUM_BASE_URL", "http://localhost:5003")))
+        base_url = str(
+            cfg.get("WORD_PREMIUM_BASE_URL", os.environ.get("WORD_PREMIUM_BASE_URL", "http://localhost:5003"))
+        )
         api_key = str(cfg.get("WORD_PREMIUM_API_KEY", os.environ.get("WORD_PREMIUM_API_KEY", "")))
         timeout_ms = int(cfg.get("WORD_PREMIUM_TIMEOUT_MS", os.environ.get("WORD_PREMIUM_TIMEOUT_MS", "60000")))
         return PremiumConfig(enabled=enabled, base_url=base_url, api_key=api_key, timeout_ms=timeout_ms)
@@ -94,7 +97,7 @@ class PremiumWordClient:
                 timeout=self.config.timeout_ms / 1000.0,
             )
             resp.raise_for_status()
-            payload = resp.json()
+            payload: Dict[str, Any] = cast(Dict[str, Any], resp.json())
             if not payload.get("success"):
                 return payload
 
@@ -117,7 +120,9 @@ class PremiumWordClient:
             out_path = fm.get_download_path(unified_name)
             os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-            with self.session.get(download_url, headers=headers, stream=True, timeout=self.config.timeout_ms / 1000.0) as r:
+            with self.session.get(
+                download_url, headers=headers, stream=True, timeout=self.config.timeout_ms / 1000.0
+            ) as r:
                 r.raise_for_status()
                 with open(out_path, "wb") as f:
                     for chunk in r.iter_content(chunk_size=8192):

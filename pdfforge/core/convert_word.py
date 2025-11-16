@@ -11,9 +11,9 @@ be accessed via an integration shim in the service layer (not here).
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Optional, Tuple
-import os
 
 from pdf2docx import Converter  # type: ignore
 

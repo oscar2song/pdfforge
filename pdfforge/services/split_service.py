@@ -10,10 +10,11 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List
 
+from PyPDF2 import PdfReader  # type: ignore
+
 from ..core.split import PDFSplitterCore
 from ..utils.file_manager import FilePathManager, get_file_manager
 from ..utils.file_utils import create_zip_archive
-from PyPDF2 import PdfReader  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +127,9 @@ class SplitService:
                         end = start + max(count, 1) - 1
 
                     suffix = f"split_pages_{start}-{end}"
-                    new_name = self.file_manager.generate_output_filename(f"{base_name}.pdf", operation="split", suffix=suffix)
+                    new_name = self.file_manager.generate_output_filename(
+                        f"{base_name}.pdf", operation="split", suffix=suffix
+                    )
                     new_path = str((Path(p).parent / new_name))
                     os.replace(p, new_path)
                     renamed_files.append(new_path)
@@ -145,9 +148,7 @@ class SplitService:
                 zip_path = create_zip_archive(files_for_zip, zip_filename, component="split")
 
             # Build per-file component-aware download URLs
-            download_urls: List[str] = [
-                f"/download/component/split/{Path(f).stem}" for f in output_files
-            ]
+            download_urls: List[str] = [f"/download/component/split/{Path(f).stem}" for f in output_files]
 
             payload: Dict[str, Any] = {
                 "success": True,

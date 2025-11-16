@@ -157,6 +157,7 @@ def compress_pdf():
             # Build component-aware download URL using file_id from file_path
             try:
                 from pathlib import Path
+
                 file_id = Path(result.get("file_path", "")).stem if result.get("file_path") else None
             except Exception:
                 file_id = None
@@ -190,6 +191,7 @@ def compress_pdf():
                     # Build per-file component-aware URLs
                     try:
                         from pathlib import Path
+
                         per_file_urls = []
                         for item in result["results"]:
                             stem = Path(item.get("file_path", "")).stem if item.get("file_path") else None
@@ -201,7 +203,7 @@ def compress_pdf():
                         pass
                 # If a ZIP was produced (final output is a zip), expose component download URL
                 try:
-                    if isinstance(result.get("file_path"), str) and result.get("file_path").lower().endswith('.zip'):
+                    if isinstance(result.get("file_path"), str) and result.get("file_path").lower().endswith(".zip"):
                         zip_id = Path(result["file_path"]).stem
                         response_data["component_download_url"] = f"/download/component/compress/{zip_id}"
                         response_data["zip_filename"] = result.get("filename")
