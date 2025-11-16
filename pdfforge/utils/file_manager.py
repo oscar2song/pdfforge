@@ -36,6 +36,7 @@ class FilePathManager:
         self.normalize_dir.mkdir(parents=True, exist_ok=True)
         self.compress_dir.mkdir(parents=True, exist_ok=True)
         self.toc_dir.mkdir(parents=True, exist_ok=True)  # ADD TOC DIRECTORY
+        self.split_dir.mkdir(parents=True, exist_ok=True)  # ADD SPLIT DIRECTORY
 
     @property
     def uploads_dir(self) -> Path:
@@ -69,6 +70,10 @@ class FilePathManager:
     def toc_dir(self) -> Path:  # ADD TOC DIRECTORY
         return self.downloads_dir / "toc"
 
+    @property
+    def split_dir(self) -> Path:  # ADD SPLIT DIRECTORY
+        return self.downloads_dir / "split"
+
     def get_component_dir(self) -> Path:
         """Get the appropriate directory for the current component"""
         if self.component == "normalize":
@@ -77,6 +82,8 @@ class FilePathManager:
             return self.compress_dir
         elif self.component == "toc":  # ADD TOC SUPPORT
             return self.toc_dir
+        elif self.component == "split":  # ADD SPLIT SUPPORT
+            return self.split_dir
         else:  # merge or default
             return self.merge_dir
 

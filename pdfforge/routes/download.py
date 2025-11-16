@@ -29,7 +29,7 @@ def find_file_anywhere(filename: str):
         return None
 
     # Try component-specific download directories first
-    components = ["merge", "normalize", "compress", "toc"]  # INCLUDES TOC
+    components = ["merge", "normalize", "compress", "toc", "split"]  # include split
     for component in components:
         file_manager = get_file_manager(component)
         # Get the downloads directory for this component
@@ -70,7 +70,7 @@ def find_file_by_id(file_id: str, component: str | None = None):
                 return file_path
     else:
         # Search all component directories
-        components = ["merge", "normalize", "compress", "toc"]
+        components = ["merge", "normalize", "compress", "toc", "split"]
         for comp in components:
             file_manager = get_file_manager(comp)
             component_dir = file_manager.get_component_dir()
@@ -120,7 +120,7 @@ def download_component_file(component, file_id):
     current_app.logger.info(f"🎯 COMPONENT DOWNLOAD: {component}/{file_id}")
 
     try:
-        valid_components = ["merge", "normalize", "compress", "toc"]
+        valid_components = ["merge", "normalize", "compress", "toc", "split"]
         if component not in valid_components:
             abort(400, f"Invalid component. Must be one of: {', '.join(valid_components)}")
 
@@ -174,7 +174,7 @@ def cleanup_file(component, filename):
         safe_filename = secure_filename(filename)
 
         # Validate component
-        valid_components = ["compress", "merge", "normalize", "toc"]
+        valid_components = ["compress", "merge", "normalize", "toc", "split"]
         if component not in valid_components:
             return jsonify({"success": False, "error": "Invalid component"}), 400
 

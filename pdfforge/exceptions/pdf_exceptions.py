@@ -37,3 +37,7 @@ class PDFCorruptionError(PDFError):
 
 class PDFAnalysisError:
     """Raised when a PDF file is Analysis"""
+
+
+class PDFSplitError(PDFError):
+    """Raised when PDF splitting fails"""

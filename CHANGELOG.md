@@ -5,6 +5,24 @@ All notable changes to PDFForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- PDF Split feature with multiple methods: by page ranges, fixed page count, approximate max file size, and bookmarks.
+- Web UI for Split at `/split/` with live validation and analysis.
+- Dedicated stylesheet `static/css/split.css` and front-end logic in `static/js/split.js`.
+- Backend service `SplitService`, core logic `PDFSplitterCore`, and routes under `/split`.
+- Download routes updated to recognize the `split` component; ZIP auto-creation for multi-part results.
+
+### Changed
+- Navigation updated to include Split tool.
+- `FilePathManager` now provisions a `downloads/split` directory and supports component-based paths.
+- Documentation structure prepared for Split guide and API examples.
+
+### Fixed
+- UI: “Split PDF” button now enables immediately when inputs become valid (no extra click needed).
+- Accept shorthand page-ranges like `"1,63"` meaning `1-62` and `63-end`.
+
 ## [2.1.0] - 2025-11-03
 
 ### Planned

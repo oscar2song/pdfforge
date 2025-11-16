@@ -71,6 +71,7 @@ def register_blueprints(app):
 
     # TOC Features (NEW)
     from .routes.toc import toc_bp
+    from .routes.split import split_bp
 
     # Register existing blueprints
     app.register_blueprint(main_bp)
@@ -82,6 +83,9 @@ def register_blueprints(app):
 
     # Register TOC blueprints (NEW)
     app.register_blueprint(toc_bp)  # Standalone TOC Manager at /toc
+
+    # Register Split blueprint (NEW)
+    app.register_blueprint(split_bp)
 
 
 def configure_logging(app):
