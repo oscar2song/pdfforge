@@ -201,3 +201,67 @@ This release represents a complete rewrite of PDFForge with a modern, modular ar
 
 [2.1.0]: https://github.com/oscar2song/pdfforge/compare/v1.0.0...v2.1.0
 [1.0.0]: https://github.com/oscar2song/pdfforge/releases/tag/v1.0.0
+
+
+## [2.2.0] - 2025-11-15
+
+### Added
+- Navigation: “TOC Manager” added to the top menu for quick access (`pdfforge/templates/base.html`).
+- CI/CD: Manual Release workflow with safety checks (`.github/workflows/release.yml`).
+  - Requires `tag` input and `confirm=YES` to proceed
+  - Validates SemVer tag format and verifies the tag exists
+  - Runs smoke tests with `pytest -q` before releasing
+  - Idempotency guard: skips if a Release for the tag already exists
+  - Draft by default; `prerelease` auto-detected if tag contains `-`
+- Docs: New Releasing guide `docs/RELEASING.md` and README “Releasing” section summarizing the flow.
+
+### Changed
+- Homepage: Removed links and UI for the deprecated “Enhanced Merge with TOC” and consolidated to the standard Merge flow (`main.merge_page`).
+- Ports: Documentation now recommends using allowed browser ports (e.g., 8080 or 5000). Note about Chromium’s unsafe port policy (6000 is blocked) added.
+- Docker: Binds to 8080 and uses the current app factory path `pdfforge.create_app:create_app()` in `Dockerfile` and `docker-compose.yml`.
+
+### Removed
+- Enhanced Merge feature references (blueprint unregistered, homepage cards removed). Files remain in repo for now but are unused.
+
+### Notes
+- If you still need the Enhanced Merge code, consider archiving files under `docs/_archive/` before removal.
+
+
+## [2.2.1] - 2025-11-15
+
+### Fixed
+- Type checking errors in `pdfforge/core/toc.py` (replaced `any` with `typing.Any`, corrected numeric field types, accurate return annotations).
+- Linting issues in `pdfforge/core/toc.py` and `pdfforge/services/toc_service.py` (removed unused imports, replaced bare `except:`, wrapped long debug line).
+
+### Internal
+- Ensured all quality checks pass: tests, mypy, flake8, black, and isort.
+- Minor refactors to keep style consistent (explicit `float` arithmetic for positions; clarified optional types).
+
+
+## [2.2.2] - 2025-11-15
+
+### Added
+- Unit tests for TOC detection helper and bookmark extraction normalization (`tests/test_toc_core.py`).
+- Integration tests for multi-page TOC generation, old TOC removal, link target and outline mapping (`tests/test_toc_integration.py`).
+- Documentation section "Existing TOC detection & normalization" explaining behavior and calculations (`docs/TOC.md`).
+
+### Fixed
+- Correct handling when PDFs already contain TOC pages: extracted bookmarks in the UI now start from 1 (body pages only). Defensive normalization in `add_toc_to_pdf(...)` ensures incoming pages are adjusted if offset by existing TOC pages.
+
+### Internal
+- Ensured tests are lightweight and use in-memory/synthetic PDFs via PyMuPDF for reliability.
+
+
+## [2.2.3] - 2025-11-15
+
+### Added
+- Three-column TOC layout with automatic title wrapping so long titles never overflow margins.
+- Functional leader dots option between titles and page numbers; page numbers are right-aligned with a fixed reserve width.
+- Documentation updates describing the new layout and `TOCStyle` fields (`docs/TOC.md`).
+- Targeted tests for wrapping, column computation, and leader dots behavior (`tests/test_toc_layout.py`).
+
+### Changed
+- TOC link rectangles now span the full wrapped entry block, improving clickability for multi-line entries.
+
+### Internal
+- Minor refactors in `pdfforge/core/toc.py` to support wrapping and layout helpers; no breaking API changes.
