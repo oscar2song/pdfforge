@@ -64,7 +64,6 @@ dmypy.json
 .pytype/
 
 # Environment variables
-.env
 .env.local
 .env.*.local
 
@@ -103,7 +102,6 @@ output/
 
 # Package files
 *.tar.gz
-*.zip
 *.rar
 *.7z
 
