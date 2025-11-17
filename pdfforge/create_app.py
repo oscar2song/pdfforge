@@ -68,9 +68,11 @@ def register_blueprints(app):
     from .routes.main import main_bp
     from .routes.merge import merge_bp
     from .routes.normalize import normalize_bp
+    from .routes.split import split_bp
 
     # TOC Features (NEW)
     from .routes.toc import toc_bp
+    from .routes.word import word_bp
 
     # Register existing blueprints
     app.register_blueprint(main_bp)
@@ -82,6 +84,12 @@ def register_blueprints(app):
 
     # Register TOC blueprints (NEW)
     app.register_blueprint(toc_bp)  # Standalone TOC Manager at /toc
+
+    # Register Split blueprint (NEW)
+    app.register_blueprint(split_bp)
+
+    # Register Word blueprint (NEW)
+    app.register_blueprint(word_bp)
 
 
 def configure_logging(app):

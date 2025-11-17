@@ -81,21 +81,6 @@ class NormalizeManager {
         this.updateUI();
     }
 
-    downloadFile(filePath, filename) {
-        // Show download link
-        const downloadLink = document.getElementById('download-link');
-        const downloadUrl = `/download/${filename}`;
-
-        downloadLink.innerHTML = `
-        <div class="success-message">
-            <p>Processing complete! Your file is ready for download.</p>
-            <a href="${downloadUrl}" class="btn btn-primary" 
-               onclick="cleanupAfterDownload('${filename}')">
-                Download ${filename}
-            </a>
-        </div>
-    `;
-    }
 
     cleanupAfterDownload(filename) {
         // Wait a bit then cleanup the file

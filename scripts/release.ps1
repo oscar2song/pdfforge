@@ -137,7 +137,7 @@ if ($CreateTag) {
   if ($exists) {
     Write-Host "Tag $Tag already exists locally." -ForegroundColor Yellow
   } else {
-    $msg = "PDFForge $Tag – Release"
+    $msg = "PDFForge $Tag - Release"
     git tag -a $Tag -m $msg
     if ($LASTEXITCODE -ne 0) { Write-Error "Failed to create tag $Tag."; exit 1 }
     Write-Host "Created tag $Tag" -ForegroundColor Green

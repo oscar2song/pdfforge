@@ -33,6 +33,13 @@ A powerful, user-friendly web application for PDF manipulation built with Flask 
 - **Safe Compression**: Never increases file size
 - **Size Reporting**: See before/after sizes and compression ratio
 
+### ✂️ PDF Split
+- **Split by Pages**: Fixed page count (e.g., 3 pages per file) or explicit ranges like `1-5,10-12,20`
+- **Start-Page Shorthand**: Ranges can be provided as starts only, e.g., `1,63` → `1-62` and `63-end`
+- **Split by Size (Approx.)**: Target max MB per file using average MB/page
+- **Split by Bookmarks**: Split at bookmark boundaries (top-level)
+- **UI + API**: Use at `/split/` or via REST endpoints (`/split/upload`, `/split/analyze`, `/split/process`)
+
 ## 🏗️ Architecture
 
 PDFForge v2.0 features a **modular, maintainable architecture** with clean separation of concerns:
@@ -73,6 +80,7 @@ pdfforge/
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture documentation.
 
 For TOC generation and customization details, see the TOC guide: [docs/TOC.md](docs/TOC.md).
+For the new Split feature, see the Split guide: [docs/SPLIT.md](docs/SPLIT.md).
 
 ## 🚀 Quick Start
 

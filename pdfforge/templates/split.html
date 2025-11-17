@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/split.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="tool-page">
+    <h1>Split PDF</h1>
+    <p class="page-description">Split a PDF by page ranges, fixed page count, file size, or bookmarks.</p>
+
+    <div class="tool-interface">
+        <div class="upload-section">
+            <h3>Upload PDF File</h3>
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+                <div class="upload-placeholder">
+                    <p>Drag & drop a PDF file here or click to browse</p>
+                    <p class="upload-hint">Only one file at a time</p>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+                    Select File
+                </button>
+            </div>
+            <div id="fileList" class="file-list"></div>
+        </div>
+
+        <div class="options-section">
+            <h3>Split Options</h3>
+
+            <div class="option-group">
+                <div class="form-row">
+                    <label for="splitType">Split Method:</label>
+                    <select id="splitType" class="form-select">
+                        <option value="pages" selected>By Pages</option>
+                        <option value="size">By File Size (approx)</option>
+                        <option value="bookmarks">By Bookmarks</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="pagesOptions" class="sub-options">
+                <div class="form-row">
+                    <label for="pageMode">Pages mode:</label>
+                    <select id="pageMode" class="form-select">
+                        <option value="ranges" selected>Specific ranges</option>
+                        <option value="fixed">Fixed pages per file</option>
+                    </select>
+                </div>
+
+                <div id="rangeInputRow" class="form-row">
+                    <label for="pageRanges">Page ranges:</label>
+                    <input type="text" id="pageRanges" placeholder="e.g. 1-5,10-12,20" class="form-input">
+                </div>
+
+                <div id="fixedInputRow" class="form-row" style="display: none;">
+                    <label for="pagesPerFile">Pages per file:</label>
+                    <input type="number" id="pagesPerFile" class="form-input" min="1" value="1">
+                </div>
+            </div>
+
+            <div id="sizeOptions" class="sub-options" style="display: none;">
+                <div class="form-row">
+                    <label for="maxSizeMb">Max size per file (MB):</label>
+                    <input type="number" id="maxSizeMb" class="form-input" min="1" step="0.5" value="10">
+                </div>
+                <p class="option-description">Note: size-based splitting is approximate, based on average MB/page.</p>
+            </div>
+
+            <div id="bookmarkOptions" class="sub-options" style="display: none;">
+                <p class="option-description">Splits the document at top-level bookmark boundaries.</p>
+            </div>
+        </div>
+
+        <div class="action-section">
+            <button id="analyzeButton" class="btn btn-secondary" disabled>Analyze</button>
+            <button id="splitButton" class="btn btn-primary btn-large" disabled>Split PDF</button>
+            <button id="resetButton" class="btn btn-link">Reset</button>
+        </div>
+
+        <div id="analysisSection" class="result-section" style="display:none;">
+            <h3>Analysis</h3>
+            <div id="analysisInfo"></div>
+        </div>
+
+        <div id="resultSection" class="result-section" style="display: none;">
+            <h3>Split Complete</h3>
+            <div id="resultInfo"></div>
+            <div id="downloadLinks" class="download-links"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/split.js') }}"></script>
+{% endblock %}

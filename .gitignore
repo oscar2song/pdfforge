@@ -64,6 +64,7 @@ dmypy.json
 .pytype/
 
 # Environment variables
+.env
 .env.local
 .env.*.local
 
@@ -102,6 +103,7 @@ output/
 
 # Package files
 *.tar.gz
+*.zip
 *.rar
 *.7z
 
@@ -128,4 +130,7 @@ fixtures/
 local/
 demo/
 
+# --- Repo separation: keep private SaaS out of OSS repo ---
 external/
+external/**
+# If using a git submodule for SaaS, comment the two lines above and track only the submodule pointer.

@@ -9,6 +9,7 @@ PDFForge provides both a web interface and a programmatic API for PDF manipulati
 ## 📋 Table of Contents
 
 - [Python API (Current)](#python-api-current)
+- [Split Endpoints (Web API)](#split-endpoints-web-api)
 - [REST API (Planned)](#rest-api-planned)
 - [Authentication](#authentication)
 - [Rate Limiting](#rate-limiting)
@@ -172,6 +173,75 @@ try:
     print("PDF is valid")
 except ValidationError as e:
     print(f"Invalid PDF: {e}")
+```
+
+## ✂️ Split Endpoints (Web API)
+
+The Split feature exposes simple web endpoints useful for automation.
+
+Base URL: `http://localhost:5000`
+
+### POST /split/upload
+Form-Data:
+- file: PDF file to upload
+
+Response (200):
+```json
+{
+  "success": true,
+  "file_path": "C:/.../uploads/input.pdf",
+  "filename": "input.pdf"
+}
+```
+
+### POST /split/analyze
+Body (JSON):
+```json
+{ "file_path": "C:/.../uploads/input.pdf" }
+```
+Response (200):
+```json
+{
+  "success": true,
+  "total_pages": 123,
+  "size_mb": 47.32,
+  "avg_mb_per_page": 0.385,
+  "has_bookmarks": true
+}
+```
+
+### POST /split/process
+Body (JSON):
+```json
+{
+  "file_path": "C:/.../uploads/input.pdf",
+  "options": {
+    "split_type": "pages",
+    "page_ranges": "1-5,10-12,20",
+    "pages_per_file": 3,
+    "max_size_mb": 10.0
+  }
+}
+```
+Notes:
+- `split_type` is one of: `pages`, `size`, `bookmarks`.
+- If `page_ranges` uses only start pages like "1,63" (no hyphen), it maps to contiguous ranges: `1-62` and `63-end`.
+
+Response (200):
+```json
+{
+  "success": true,
+  "files_created": 5,
+  "output_dir": "C:/.../downloads/split/input",
+  "output_files": [
+    "C:/.../downloads/split/input/input_pages_1-5.pdf"
+  ],
+  "zip_filename": "input_split.zip",
+  "download_url": "/download/input_split.zip",
+  "component_download_url": "/download/component/split/input_split",
+  "file_id": "input_split",
+  "split_type": "pages"
+}
 ```
 
 ## 🌐 REST API (Planned for v2.1)

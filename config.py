@@ -36,6 +36,12 @@ class Config:
     # OCR Settings
     TESSERACT_CMD = os.environ.get('TESSERACT_CMD') or None
 
+    # Premium (external SaaS) integration
+    WORD_PREMIUM_ENABLED = os.environ.get('WORD_PREMIUM_ENABLED', 'false').lower() in ('1', 'true', 'yes')
+    WORD_PREMIUM_BASE_URL = os.environ.get('WORD_PREMIUM_BASE_URL', 'http://localhost:5003')
+    WORD_PREMIUM_API_KEY = os.environ.get('WORD_PREMIUM_API_KEY', '')
+    WORD_PREMIUM_TIMEOUT_MS = int(os.environ.get('WORD_PREMIUM_TIMEOUT_MS', '60000'))
+
     # Logging
     LOG_LEVEL = os.environ.get('LOG_LEVEL') or 'INFO'
     LOG_FILE = os.environ.get('LOG_FILE') or 'pdfforge.log'

@@ -36,6 +36,8 @@ class FilePathManager:
         self.normalize_dir.mkdir(parents=True, exist_ok=True)
         self.compress_dir.mkdir(parents=True, exist_ok=True)
         self.toc_dir.mkdir(parents=True, exist_ok=True)  # ADD TOC DIRECTORY
+        self.split_dir.mkdir(parents=True, exist_ok=True)  # ADD SPLIT DIRECTORY
+        self.word_dir.mkdir(parents=True, exist_ok=True)  # ADD WORD DIRECTORY
 
     @property
     def uploads_dir(self) -> Path:
@@ -69,6 +71,14 @@ class FilePathManager:
     def toc_dir(self) -> Path:  # ADD TOC DIRECTORY
         return self.downloads_dir / "toc"
 
+    @property
+    def split_dir(self) -> Path:  # ADD SPLIT DIRECTORY
+        return self.downloads_dir / "split"
+
+    @property
+    def word_dir(self) -> Path:  # ADD WORD DIRECTORY
+        return self.downloads_dir / "word"
+
     def get_component_dir(self) -> Path:
         """Get the appropriate directory for the current component"""
         if self.component == "normalize":
@@ -77,6 +87,10 @@ class FilePathManager:
             return self.compress_dir
         elif self.component == "toc":  # ADD TOC SUPPORT
             return self.toc_dir
+        elif self.component == "split":  # ADD SPLIT SUPPORT
+            return self.split_dir
+        elif self.component == "word":  # ADD WORD SUPPORT
+            return self.word_dir
         else:  # merge or default
             return self.merge_dir
 
@@ -90,19 +104,29 @@ class FilePathManager:
     def get_temp_path(self, filename: str) -> Path:
         return self.temp_dir / filename
 
-    def generate_output_filename(self, original_name: str, operation: str, suffix: str = "") -> str:
-        """Generate consistent output filenames across all components"""
+    def generate_output_filename(
+        self, original_name: str, operation: str, suffix: str = "", ext_override: str | None = None
+    ) -> str:
+        """Generate consistent output filenames across all components
+        Pattern: yyyyMMdd_HHmmss_OriginalFileName_ACTION.ext
+        - original_name: source filename or base
+        - operation: semantic action token (normalized, compressed, merged, split, toc, converted, etc.)
+        - suffix: optional override for action token (kept for backward compat); if provided, used instead of operation
+        - ext_override: when provided, force this extension (e.g., ".docx" or ".zip")
+        """
         from datetime import datetime
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         name_without_ext = Path(original_name).stem
-        extension = Path(original_name).suffix or ".pdf"
+        # Determine extension: explicit override > original suffix > default .pdf
+        extension = ext_override if ext_override else (Path(original_name).suffix or ".pdf")
+        # Ensure extension starts with a dot
+        if extension and not extension.startswith("."):
+            extension = "." + extension
 
-        if suffix:
-            return f"{timestamp}_{name_without_ext}_{suffix}{extension}"
-        else:
-            return f"{timestamp}_{name_without_ext}_{operation}{extension}"
+        token = suffix or operation
+        return f"{timestamp}_{name_without_ext}_{token}{extension}"
 
     def is_external_path(self) -> bool:
         """Check if using external paths (for containers)"""

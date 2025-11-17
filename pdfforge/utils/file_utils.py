@@ -31,9 +31,14 @@ def save_uploaded_file(file, upload_folder: str | None = None) -> str:
 
 
 def create_output_filename(original_filename: str, suffix: str) -> str:
-    """Create output filename with suffix."""
-    name_without_ext = os.path.splitext(original_filename)[0]
-    return f"{name_without_ext}_{suffix}.pdf"
+    """Create output filename using unified timestamped convention.
+
+    Pattern: yyyyMMdd_HHmmss_OriginalFileName_SUFFIX.pdf
+    """
+    fm = get_file_manager()
+    # Ensure we pass a name with an extension so default .pdf is respected when no override
+    base_name = original_filename if os.path.splitext(original_filename)[1] else f"{original_filename}.pdf"
+    return fm.generate_output_filename(base_name, operation=suffix)
 
 
 def save_pdf(pdf_bytes, filename: str, component: str = "merge") -> str:

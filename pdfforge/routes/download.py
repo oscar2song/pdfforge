@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 from flask import Blueprint, abort, current_app, jsonify, send_file
+from werkzeug.exceptions import HTTPException
 
 from ..utils.file_manager import get_file_manager
 
@@ -29,7 +30,7 @@ def find_file_anywhere(filename: str):
         return None
 
     # Try component-specific download directories first
-    components = ["merge", "normalize", "compress", "toc"]  # INCLUDES TOC
+    components = ["merge", "normalize", "compress", "toc", "split", "word"]  # include split + word
     for component in components:
         file_manager = get_file_manager(component)
         # Get the downloads directory for this component
@@ -70,7 +71,7 @@ def find_file_by_id(file_id: str, component: str | None = None):
                 return file_path
     else:
         # Search all component directories
-        components = ["merge", "normalize", "compress", "toc"]
+        components = ["merge", "normalize", "compress", "toc", "split", "word"]
         for comp in components:
             file_manager = get_file_manager(comp)
             component_dir = file_manager.get_component_dir()
@@ -96,6 +97,9 @@ def download_file(filename):
     """Download a processed file - UPDATED with file manager"""
     current_app.logger.info("🎯 MAIN DOWNLOAD ROUTE EXECUTING!")
     current_app.logger.info(f"Requested filename: {filename}")
+    current_app.logger.warning(
+        "Legacy download route '/download/<filename>' used. Prefer '/download/component/<component>/<file_id>'"
+    )
 
     try:
         file_path = find_file_anywhere(filename)
@@ -109,6 +113,9 @@ def download_file(filename):
         # Send file
         return send_file(str(file_path), as_attachment=True, download_name=filename)
 
+    except HTTPException as e:
+        # Preserve intended HTTP status (e.g., 404)
+        raise e
     except Exception as e:
         current_app.logger.error(f"Download error: {str(e)}")
         abort(500, "Download failed")
@@ -120,7 +127,7 @@ def download_component_file(component, file_id):
     current_app.logger.info(f"🎯 COMPONENT DOWNLOAD: {component}/{file_id}")
 
     try:
-        valid_components = ["merge", "normalize", "compress", "toc"]
+        valid_components = ["merge", "normalize", "compress", "toc", "split", "word"]
         if component not in valid_components:
             abort(400, f"Invalid component. Must be one of: {', '.join(valid_components)}")
 
@@ -134,6 +141,8 @@ def download_component_file(component, file_id):
 
         return send_file(str(file_path), as_attachment=True, download_name=file_path.name)
 
+    except HTTPException as e:
+        raise e
     except Exception as e:
         current_app.logger.error(f"Component download error: {str(e)}")
         abort(500, "Download failed")
@@ -174,7 +183,7 @@ def cleanup_file(component, filename):
         safe_filename = secure_filename(filename)
 
         # Validate component
-        valid_components = ["compress", "merge", "normalize", "toc"]
+        valid_components = ["compress", "merge", "normalize", "toc", "split", "word"]
         if component not in valid_components:
             return jsonify({"success": False, "error": "Invalid component"}), 400
 
@@ -223,7 +232,7 @@ def debug_current_state():
     result = {"current_working_directory": os.getcwd(), "file_manager_locations": {}, "old_locations": {}}
 
     # Check file manager locations
-    components = ["merge", "normalize", "compress", "toc"]
+    components = ["merge", "normalize", "compress", "toc", "split", "word"]
     for component in components:
         file_manager = get_file_manager(component)
         component_dir = file_manager.get_component_dir()

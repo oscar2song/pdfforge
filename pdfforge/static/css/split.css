@@ -1,0 +1,135 @@
+/* split.css - Styles specific to the Split PDF page
+   Scope your selectors to the split page structure to avoid leaking styles.
+   The page already uses global main.css and components.css. These rules provide
+   additional layout, spacing, and state styles unique to splitting workflows. */
+
+/* Page title and description tweaks */
+.tool-page > h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+
+/* Upload area refinements (single-file focus) */
+.tool-page .upload-section .upload-area {
+  border: 2px dashed var(--border-color, #d7d7d7);
+  background: var(--panel-bg, #fafafa);
+  padding: 24px;
+}
+
+.tool-page .upload-section .upload-area.drag-over {
+  border-color: var(--primary, #3b82f6);
+  background: rgba(59,130,246,0.06);
+}
+
+.tool-page .upload-section .upload-hint {
+  color: var(--text-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+/* Options section and sub-options */
+.tool-page .options-section {
+  margin-top: 18px;
+}
+
+.tool-page .option-group {
+  margin-bottom: 16px;
+}
+
+.tool-page .sub-options {
+  margin-top: 10px;
+  padding: 12px;
+  border-left: 3px solid var(--border-color, #e5e7eb);
+  background: var(--panel-subtle, #fbfbfb);
+  border-radius: 6px;
+}
+
+.tool-page .option-description {
+  color: var(--text-muted, #6b7280);
+  margin: 6px 0 0 0;
+}
+
+/* Action buttons row */
+.tool-page .action-section {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+/* Analysis panel */
+#analysisSection {
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+#analysisInfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 16px;
+}
+
+#analysisInfo .stat {
+  background: var(--panel-subtle, #f8fafc);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+/* Results area */
+#resultSection {
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+#resultInfo {
+  margin-bottom: 10px;
+}
+
+.download-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.download-links .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel-subtle, #f1f5f9);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.92rem;
+}
+
+/* Form rows tightness + inputs */
+.tool-page .form-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 700px) {
+  .tool-page .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Helper badges */
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.75rem;
+}

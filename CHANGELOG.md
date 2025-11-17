@@ -5,6 +5,58 @@ All notable changes to PDFForge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [2.4.0] - 2025-11-16
+
+### Added
+- New PDF → Word (DOCX) converter (free/local path) with options: page range, merge paragraphs, table detection, keep text boxes, images as background, image DPI/original handling.
+- Word UI page with upload, analyze, and convert flows; drag & drop and single-click upload.
+- Premium integration shim (optional) to call external SaaS at `http://localhost:5003` using `X-API-Key` for scanned PDFs (OCR) and advanced options; results are downloaded into `downloads/word`.
+- Component-aware download scheme across all tools: canonical URLs are now `/download/component/<component>/<file_id>`.
+- Home page Word tool card; TOC tool refactor into separate HTML/JS/CSS.
+
+### Changed
+- Unified output filename convention for all tools: `yyyyMMdd_HHmmss_OriginalFileName_ACTION.ext` (.pdf for PDF tools, .docx for Word, .zip for archives).
+- Split outputs now use range-based suffixes (e.g., `split_pages_1-62.pdf`, `split_pages_63-207.pdf`).
+- TOC page restyled to match other tools (clean white header, centered title/subtitle, neutral Upload button).
+- Standardized API responses to include component-aware `download_url(s)` and, when applicable, `component_download_url` for ZIPs.
+
+### Fixed
+- Word conversion: corrected `pdf2docx.Converter` usage (no context manager) to prevent runtime error.
+- Resolved `PyMuPDF` compatibility for `pdf2docx` by pinning `PyMuPDF==1.23.7`.
+- Word downloads no longer 404: links now target the component route and search within `downloads/word`.
+
+### Removed
+- Legacy download fields removed from API responses:
+  - Normalize: `download_url_legacy` (old `/download/<filename>`)
+  - Merge: `download_url_legacy` (old `/download/<filename>`)
+  - Word (batch): removed `zip_download_url` (use `component_download_url`)
+- Frontend fallbacks that constructed legacy `/download/<filename>` links have been removed or are no longer used; UIs use server-provided component URLs exclusively.
+
+### Notes
+- Legacy route `/download/<filename>` remains available for backward compatibility, but it now logs a deprecation warning. All first-party pages use component-aware URLs.
+- TOC template consolidated; please remove `pdfforge/templates/toc2.html` from the repo if still present (the app renders `toc.html`).
+
+## [2.3.0] - 2025-11-15
+
+### Added
+- PDF Split feature with multiple methods: by page ranges, fixed page count, approximate max file size, and bookmarks.
+- Web UI for Split at `/split/` with live validation and analysis.
+- Dedicated stylesheet `static/css/split.css` and front-end logic in `static/js/split.js`.
+- Backend service `SplitService`, core logic `PDFSplitterCore`, and routes under `/split`.
+- Download routes updated to recognize the `split` component; ZIP auto-creation for multi-part results.
+- Home page `tool-card` for Split.
+
+### Changed
+- Navigation updated to include Split tool.
+- `FilePathManager` now provisions a `downloads/split` directory and supports component-based paths.
+- Documentation expanded: `docs/SPLIT.md`, Split API section in `docs/API.md`, README features.
+
+### Fixed
+- UI: “Split PDF” button now enables immediately when inputs become valid (no extra click needed).
+- Split ranges: Accept shorthand start-pages like "1,63" → contiguous ranges (`1-62`, `63-end`).
+
 ## [2.1.0] - 2025-11-03
 
 ### Planned

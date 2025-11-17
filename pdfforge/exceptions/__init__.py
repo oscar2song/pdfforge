@@ -10,6 +10,7 @@ from .pdf_exceptions import (
     PDFNormalizationError,
     PDFOCRError,
     PDFPermissionError,
+    PDFSplitError,
     PDFValidationError,
 )
 from .validation_exceptions import (
@@ -30,6 +31,7 @@ __all__ = [
     "PDFValidationError",
     "PDFPermissionError",
     "PDFCorruptionError",
+    "PDFSplitError",
     # Validation exceptions
     "ValidationError",
     "FileValidationError",
