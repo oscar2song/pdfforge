@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero">
+  <h1>Unlock Premium: {{ feature_name or "Premium Feature" }}</h1>
+  <p class="subtitle">Advanced tools for power users. Available with Premium.</p>
+</div>
+
+<div class="features-section">
+  <h2>What you get</h2>
+  <div class="features-grid">
+    <div class="feature">
+      <h4>Custom TOC Builder</h4>
+      <p>Create a fully customized table of contents: multi-level entries, centered headings, notes, dashed leaders, Roman numerals, and more.</p>
+    </div>
+    <div class="feature">
+      <h4>End-to-end Workflow</h4>
+      <p>Upload your PDF, import/export TOC JSON, preview structure, and generate a downloadable PDF via our secure Premium service.</p>
+    </div>
+    <div class="feature">
+      <h4>Proxy Downloads</h4>
+      <p>Your downloads are streamed via PDFForge, keeping the SaaS backend hidden and secure.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+  <h3>How to enable Premium locally</h3>
+  <ol>
+    <li>Start your Premium backend (pdf-saas-platform) on <code>http://localhost:5003</code> and ensure <code>GET /healthz</code> returns OK.</li>
+    <li>Set these environment variables before starting PDFForge in the same terminal session:
+      <pre><code>PREMIUM_ENABLED=true
+PREMIUM_BASE_URL=http://localhost:5003
+PREMIUM_API_KEY=&lt;your-key&gt;</code></pre>
+    </li>
+    <li>Restart PDFForge and verify Premium health:
+      {% if health_url %}<a class="btn btn-secondary" href="{{ health_url }}">Check Premium Health</a>{% endif %}
+    </li>
+  </ol>
+</div>
+
+<div class="actions" style="margin-top: 24px; display:flex; gap:12px;">
+  <a href="{{ url_for('main.index') }}" class="btn btn-primary">Back to Home</a>
+  {% if feature_slug == 'toc' %}
+    {% if premium_enabled %}
+      <a href="{{ url_for('premium.toc_builder') }}" class="btn btn-secondary">Open Premium TOC Builder</a>
+    {% else %}
+      <span class="btn btn-disabled" title="Enable Premium to access the builder">Premium TOC Builder</span>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

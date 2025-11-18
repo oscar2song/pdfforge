@@ -2,7 +2,7 @@
 Main Routes - Homepage and general routes
 """
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, current_app, url_for
 
 main_bp = Blueprint("main", __name__)
 
