@@ -11,6 +11,7 @@ import tempfile
 from typing import Any, Dict
 
 from flask import Blueprint, Response, current_app, jsonify, redirect, request, stream_with_context, url_for, render_template
+import requests
 
 from pdfforge.services.saas_client import SaasClient
 
@@ -201,6 +202,20 @@ def toc_generate():
     status = int(result.get("status") or 502)
     message = result.get("error") or "Service error"
     return jsonify({"success": False, "error": message, "details": result.get("body")}), status
+
+
+@premium_bp.route("/engines", methods=["GET"])  # proxy SaaS engine health for UI
+def engines():
+    if not current_app.config.get("WORD_PREMIUM_ENABLED", False):
+        return jsonify({"success": False, "error": "Premium is disabled"}), 404
+    try:
+        client = _client()
+        url = f"{client.base_url}/api/word/engines"
+        r = requests.get(url, headers=client._headers(), timeout=10)
+        return (jsonify(r.json()), r.status_code)
+    except Exception as e:
+        logger.exception("Engine health proxy failed: %s", e)
+        return jsonify({"success": False, "error": "Failed to fetch engine health"}), 502
 
 
 @premium_bp.route("/download/<path:artifact>", methods=["GET"])  # artifact includes extension

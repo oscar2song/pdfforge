@@ -35,6 +35,24 @@
     <!-- Options -->
     <div class="options-section">
       <h3>Options</h3>
+      <!-- Engine status (Premium) -->
+      {% if premium_enabled %}
+      <div id="engineStatus" class="alert" style="margin-bottom:10px;">
+        <span id="engineStatusText">Checking Premium engines…</span>
+      </div>
+      {% else %}
+      <div class="alert alert-info" style="margin-bottom:10px;">
+        Advanced Premium options are disabled. Enable Premium to use OCR overlay and searchable output.
+      </div>
+      {% endif %}
+
+      <!-- Presets -->
+      <div class="button-group" style="margin-bottom:12px; gap:8px; flex-wrap:wrap;">
+        <button type="button" id="presetEditable" class="btn btn-secondary">Preset: Editable Word</button>
+        <button type="button" id="presetFidelity" class="btn btn-secondary">Preset: Fidelity DOCX (images)</button>
+        <button type="button" id="presetSearchable" class="btn btn-secondary" {% if not premium_enabled %}disabled title="Premium required"{% endif %}>Preset: Searchable PDF (Premium)</button>
+      </div>
+
       <div class="option-grid">
         <div class="form-row">
           <label for="pageRange">Page range</label>
@@ -84,29 +102,81 @@
       <div class="option-grid" style="margin-top:10px;">
         <div class="form-row">
           <label for="usePremium">Use Premium (SaaS)</label>
-          <select id="usePremium" class="form-select">
+          <select id="usePremium" class="form-select" title="Choose whether to use Premium OCR service">
             <option value="auto" selected>Auto (OCR if scanned)</option>
             <option value="true">Force premium</option>
             <option value="false">Free only</option>
           </select>
         </div>
         <div class="form-row">
-          <label for="enableOcr">OCR</label>
-          <select id="enableOcr" class="form-select">
+          <label for="ocrMode">OCR mode</label>
+          <select id="ocrMode" class="form-select" title="Enable OCR for scanned PDFs">
+            <option value="auto" selected>Auto</option>
+            <option value="force">Force</option>
+            <option value="false">Disable</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="overlay">Preserve layout (overlay)</label>
+          <select id="overlay" class="form-select" title="Try to preserve original layout">
+            <option value="false" selected>Off</option>
+            <option value="true">On</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="overlayMode">Overlay mode</label>
+          <select id="overlayMode" class="form-select" title="Image = exact look; Searchable = ocrmypdf + pdf2docx if available">
+            <option value="image" selected>Image (visual fidelity)</option>
+            <option value="searchable">Searchable (requires ocrmypdf)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="dpi">DPI (overlay image)</label>
+          <input type="number" id="dpi" min="72" step="1" value="220" title="Rasterization DPI for image overlay">
+        </div>
+        <div class="form-row">
+          <label for="imageFormat">Image format (overlay)</label>
+          <select id="imageFormat" class="form-select">
+            <option value="png" selected>PNG (lossless)</option>
+            <option value="jpeg">JPEG (smaller)</option>
+          </select>
+        </div>
+        <div class="form-row" id="imageQualityRow" style="display:none;">
+          <label for="imageQuality">JPEG quality (1–100)</label>
+          <input type="number" id="imageQuality" min="1" max="100" value="85">
+        </div>
+        <div class="form-row">
+          <label for="pageSize">DOCX page size</label>
+          <select id="pageSize" class="form-select">
+            <option value="auto" selected>Auto (from PDF)</option>
+            <option value="Letter">Letter</option>
+            <option value="A4">A4</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="includePageLabels">Include page labels (plain OCR)</label>
+          <select id="includePageLabels" class="form-select">
             <option value="true" selected>True</option>
             <option value="false">False</option>
           </select>
         </div>
         <div class="form-row">
-          <label for="overlayMode">Overlay fallback (layout)</label>
-          <select id="overlayMode" class="form-select">
-            <option value="false" selected>False</option>
-            <option value="true">True</option>
+          <label for="stripHyphens">Strip hyphenated line breaks (plain OCR)</label>
+          <select id="stripHyphens" class="form-select">
+            <option value="true" selected>True</option>
+            <option value="false">False</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="outputFormat">Output format</label>
+          <select id="outputFormat" class="form-select">
+            <option value="docx" selected>DOCX (Word)</option>
+            <option value="pdf">PDF (searchable, when overlay=searchable)</option>
           </select>
         </div>
         <div class="form-row">
           <label for="languages">OCR languages (comma separated)</label>
-          <input type="text" id="languages" placeholder="eng,chi_sim,fra" value="eng,chi_sim,fra">
+          <input type="text" id="languages" placeholder="eng,chi_sim,fra" value="eng">
         </div>
       </div>
     </div>
