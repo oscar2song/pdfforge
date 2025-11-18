@@ -36,5 +36,6 @@ ENV PDF_APP_DATA_DIR=/opt/pdf-merge-app/data \
 
 EXPOSE 8080
 
-# Use Gunicorn to serve the Flask app factory
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "pdfforge.create_app:create_app()"]
+# Use Gunicorn to serve the Flask app created in app.py (variable: app)
+# Tune workers and threads for I/O-bound Flask app
+CMD ["gunicorn", "-w", "4", "-k", "gthread", "--threads", "8", "--timeout", "120", "--bind", "0.0.0.0:8080", "app:app"]

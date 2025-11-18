@@ -55,8 +55,16 @@
                 <li>Multi-level structure</li>
                 <li>Custom TOC styling</li>
                 <li>Professional formatting</li>
+                <li><strong>Custom TOC builder via Premium</strong></li>
             </ul>
-            <a href="{{ url_for('toc.toc_page') }}" class="btn btn-primary">Manage TOC</a>
+            <div class="btn-group">
+                <a href="{{ url_for('toc.toc_page') }}" class="btn btn-primary">Manage TOC</a>
+                {% if premium_enabled %}
+                <a href="{{ url_for('premium.toc_builder') }}" class="btn btn-secondary">Open Premium TOC Builder</a>
+                {% else %}
+                <a href="{{ url_for('premium.toc_builder') }}" class="btn btn-disabled" title="Premium feature — click to learn more" aria-disabled="true">Premium TOC Builder</a>
+                {% endif %}
+            </div>
         </div>
 
         <!-- NEW: Split PDF -->
