@@ -48,9 +48,10 @@
 
       <!-- Presets -->
       <div class="button-group" style="margin-bottom:12px; gap:8px; flex-wrap:wrap;">
-        <button type="button" id="presetEditable" class="btn btn-secondary">Preset: Editable Word</button>
-        <button type="button" id="presetFidelity" class="btn btn-secondary">Preset: Fidelity DOCX (images)</button>
-        <button type="button" id="presetSearchable" class="btn btn-secondary" {% if not premium_enabled %}disabled title="Premium required"{% endif %}>Preset: Searchable PDF (Premium)</button>
+        <button type="button" id="presetEditable" class="btn btn-secondary" title="Produces editable DOCX via OCR text">Preset: Editable Word</button>
+        <button type="button" id="presetFidelity" class="btn btn-secondary" title="Exact layout as images in DOCX">Preset: Fidelity DOCX (images)</button>
+        <button type="button" id="presetSearchable" class="btn btn-secondary" {% if not premium_enabled %}disabled title="Premium required"{% endif %} title="Produces an OCR’d searchable PDF (Premium)">Preset: Searchable PDF (Premium)</button>
+        <button type="button" id="presetReset" class="btn" title="Reset to defaults">Reset</button>
       </div>
 
       <div class="option-grid">
