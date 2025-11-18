@@ -7,6 +7,7 @@ import logging
 import os
 
 from flask import Flask
+from jinja2 import ChoiceLoader, FileSystemLoader, PrefixLoader
 
 
 def create_app(config_class=None):
@@ -43,8 +44,31 @@ def create_app(config_class=None):
     # Initialize extensions
     init_extensions(app)
 
+    # Attach external toc_generator templates if present
+    try:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+        external_tmpl = os.path.join(project_root, "external", "toc_generator", "toc_generator", "templates")
+        if os.path.isdir(external_tmpl):
+            app.jinja_loader = ChoiceLoader([
+                app.jinja_loader,
+                PrefixLoader({
+                    # Render premium templates with: render_template("premium/<name>.html")
+                    "premium": FileSystemLoader(external_tmpl)
+                }),
+            ])
+    except Exception:
+        # Non-fatal if external templates are absent
+        pass
+
     # Register blueprints
     register_blueprints(app)
+
+    # Expose premium flag to templates
+    @app.context_processor
+    def inject_premium_flags():
+        return {
+            "premium_enabled": bool(app.config.get("WORD_PREMIUM_ENABLED", False))
+        }
 
     # Configure logging
     configure_logging(app)
@@ -68,6 +92,9 @@ def register_blueprints(app):
     from .routes.main import main_bp
     from .routes.merge import merge_bp
     from .routes.normalize import normalize_bp
+
+    # Premium Features (SaaS integration)
+    from .routes.premium import premium_bp
     from .routes.split import split_bp
 
     # TOC Features (NEW)
@@ -90,6 +117,9 @@ def register_blueprints(app):
 
     # Register Word blueprint (NEW)
     app.register_blueprint(word_bp)
+
+    # Register Premium blueprint (SaaS) under /premium
+    app.register_blueprint(premium_bp)
 
 
 def configure_logging(app):

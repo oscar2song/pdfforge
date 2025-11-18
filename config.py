@@ -36,15 +36,29 @@ class Config:
     # OCR Settings
     TESSERACT_CMD = os.environ.get('TESSERACT_CMD') or None
 
-    # Premium (external SaaS) integration
-    WORD_PREMIUM_ENABLED = os.environ.get('WORD_PREMIUM_ENABLED', 'false').lower() in ('1', 'true', 'yes')
-    WORD_PREMIUM_BASE_URL = os.environ.get('WORD_PREMIUM_BASE_URL', 'http://localhost:5003')
-    WORD_PREMIUM_API_KEY = os.environ.get('WORD_PREMIUM_API_KEY', '')
-    WORD_PREMIUM_TIMEOUT_MS = int(os.environ.get('WORD_PREMIUM_TIMEOUT_MS', '60000'))
-
     # Logging
     LOG_LEVEL = os.environ.get('LOG_LEVEL') or 'INFO'
     LOG_FILE = os.environ.get('LOG_FILE') or 'pdfforge.log'
+
+    # Premium Word (SaaS) Integration
+    # Support new generic PREMIUM_* envs with fallback to legacy WORD_PREMIUM_*
+    _prem_enabled = os.environ.get('PREMIUM_ENABLED')
+    _prem_base = os.environ.get('PREMIUM_BASE_URL')
+    _prem_key = os.environ.get('PREMIUM_API_KEY')
+    _prem_timeout = os.environ.get('PREMIUM_TIMEOUT_SECONDS')
+    _prem_retries = os.environ.get('PREMIUM_RETRIES')
+    _prem_proxy = os.environ.get('PREMIUM_DOWNLOAD_PROXY')
+
+    WORD_PREMIUM_ENABLED = (
+        (_prem_enabled or os.environ.get('WORD_PREMIUM_ENABLED', 'false')).lower() in {'1', 'true', 'yes', 'on'}
+    )
+    WORD_PREMIUM_BASE_URL = (_prem_base or os.environ.get('WORD_PREMIUM_BASE_URL') or 'http://localhost:5003')
+    WORD_PREMIUM_API_KEY = (_prem_key or os.environ.get('WORD_PREMIUM_API_KEY') or '')
+    WORD_PREMIUM_TIMEOUT_SECONDS = int(_prem_timeout or os.environ.get('WORD_PREMIUM_TIMEOUT_SECONDS', '60'))
+    WORD_PREMIUM_RETRIES = int(_prem_retries or os.environ.get('WORD_PREMIUM_RETRIES', '0'))  # per user: no retry by default
+    WORD_PREMIUM_DOWNLOAD_PROXY = (
+        (_prem_proxy or os.environ.get('WORD_PREMIUM_DOWNLOAD_PROXY', 'true')).lower() in {'1', 'true', 'yes', 'on'}
+    )
 
 
 class DevelopmentConfig(Config):

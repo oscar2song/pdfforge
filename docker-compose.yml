@@ -1,19 +1,50 @@
 # docker-compose.yml
+# Note: Provided for convenience; do not run in this phase if Docker isn't available.
 version: '3.8'
 
 services:
-  pdf-merge-app:
-    build: .
+  pdfforge:
+    build:
+      context: .
+    container_name: pdfforge
     ports:
       - "8080:8080"
-    volumes:
-      - pdf_data:/opt/pdf-merge-app/data
-      - pdf_logs:/opt/pdf-merge-app/logs
     environment:
-      - PDF_APP_DATA_DIR=/opt/pdf-merge-app/data
+      # App config
       - FLASK_ENV=production
       - PORT=8080
+      # Premium integration (client)
+      - PREMIUM_ENABLED=${PREMIUM_ENABLED:-true}
+      - PREMIUM_BASE_URL=${PREMIUM_BASE_URL:-http://saas:5003}
+      - PREMIUM_API_KEY=${PREMIUM_API_KEY:-dev-123456}
+      - PREMIUM_TIMEOUT_SECONDS=${PREMIUM_TIMEOUT_SECONDS:-60}
+      - PREMIUM_RETRIES=${PREMIUM_RETRIES:-0}
+      - PREMIUM_DOWNLOAD_PROXY=${PREMIUM_DOWNLOAD_PROXY:-true}
+    volumes:
+      - pdfforge_data:/opt/pdf-merge-app/data
+      - pdfforge_logs:/opt/pdf-merge-app/logs
+    depends_on:
+      - saas
+
+  saas:
+    build:
+      context: ./external/pdf-saas-platform
+    container_name: pdf-saas-platform
+    ports:
+      - "5003:5003"
+    environment:
+      - FLASK_ENV=production
+      - PORT=5003
+      - PREMIUM_API_KEY=${PREMIUM_API_KEY:-dev-123456}
+      - UPLOAD_FOLDER=/data/uploads
+      - ARTIFACTS_DIR=/data/artifacts
+      - CORS_ORIGINS=http://localhost:8080
+    volumes:
+      - saas_uploads:/data/uploads
+      - saas_artifacts:/data/artifacts
 
 volumes:
-  pdf_data:
-  pdf_logs:
+  pdfforge_data:
+  pdfforge_logs:
+  saas_uploads:
+  saas_artifacts:
