@@ -1,19 +1,21 @@
 """
 PDFForge Application Entry Point
 """
-from pdfforge.create_app import create_app
-from config import get_config
+
 import os
 
+from pdfforge.config import get_config
+from pdfforge.create_app import create_app
+
 # Get environment
-env = os.environ.get('FLASK_ENV', 'development')
+env = os.environ.get("FLASK_ENV", "development")
 
 # Create app with appropriate config
 app = create_app(get_config(env))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Get port from environment or default
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get("PORT", 5000))
 
     print("\n" + "=" * 70)
     print("🔨 PDFFORGE - Professional PDF Tools")
@@ -25,8 +27,4 @@ if __name__ == '__main__':
     print("=" * 70 + "\n")
 
     # Run app
-    app.run(
-        host='0.0.0.0',
-        port=port,
-        debug=app.config['DEBUG']
-    )
+    app.run(host="0.0.0.0", port=port, debug=app.config["DEBUG"])

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from config import TestingConfig
+from pdfforge.config import TestingConfig
 from pdfforge.create_app import create_app
 
 

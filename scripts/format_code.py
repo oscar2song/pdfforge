@@ -12,8 +12,8 @@ def format_code():
     print("=" * 60)
 
     commands = [
-        ("Running isort to sort imports...", "python -m isort --profile black --line-length 120 pdfforge/ tests/"),
-        ("Running black to format code...", "python -m black --line-length 120 pdfforge/ tests/"),
+        ("Running isort to sort imports...", "python -m isort --profile black --line-length 120 src/pdfforge/ tests/"),
+        ("Running black to format code...", "python -m black --line-length 120 src/pdfforge/ tests/"),
     ]
 
     for description, command in commands:

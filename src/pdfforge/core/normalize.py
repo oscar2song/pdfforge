@@ -70,7 +70,7 @@ class PDFNormalizer:
             if self.options.orientation.lower() == "landscape":
                 target_width, target_height = target_height, target_width
         else:
-            from config import Config
+            from pdfforge.config import Config
 
             page_size_key = f"{self.options.page_size.lower()}-" f"{self.options.orientation.lower()}"
             if page_size_key in Config.PAGE_SIZES:

@@ -184,7 +184,7 @@ If you were importing from the old `app.py`:
 
 ```python
 # Old (v1.x)
-from app import merge_pdfs_enhanced
+from pdfforge.app import merge_pdfs_enhanced
 
 # New (v2.0)
 from pdfforge.core.merge import PDFMerger

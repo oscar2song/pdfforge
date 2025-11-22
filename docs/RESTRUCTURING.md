@@ -612,7 +612,7 @@ class MergeOptions:
 Flask Application Factory
 """
 from flask import Flask
-from config import Config
+from pdfforge.config import Config
 import logging
 
 
@@ -628,19 +628,19 @@ def create_app(config_class=Config):
     """
     app = Flask(__name__)
     app.config.from_object(config_class)
-    
+
     # Initialize extensions
     init_extensions(app)
-    
+
     # Register blueprints
     register_blueprints(app)
-    
+
     # Configure logging
     configure_logging(app)
-    
+
     # Register error handlers
     register_error_handlers(app)
-    
+
     return app
 
 
@@ -656,7 +656,7 @@ def register_blueprints(app):
     from .routes.merge import merge_bp
     from .routes.normalize import normalize_bp
     from .routes.compress import compress_bp
-    
+
     app.register_blueprint(main_bp)
     app.register_blueprint(merge_bp)
     app.register_blueprint(normalize_bp)
@@ -674,11 +674,11 @@ def configure_logging(app):
 
 def register_error_handlers(app):
     """Register error handlers"""
-    
+
     @app.errorhandler(404)
     def not_found(error):
         return {'error': 'Not found'}, 404
-    
+
     @app.errorhandler(500)
     def internal_error(error):
         app.logger.exception("Internal error")
@@ -754,7 +754,7 @@ config = {
 PDFForge Application Entry Point
 """
 from pdfforge.create_app import create_app
-from config import config
+from pdfforge.config import config
 import os
 
 # Get environment
@@ -766,7 +766,7 @@ app = create_app(config[env])
 if __name__ == '__main__':
     # Get port from environment or default
     port = int(os.environ.get('PORT', 5000))
-    
+
     # Run app
     app.run(
         host='0.0.0.0',
@@ -788,16 +788,16 @@ import tempfile
 import shutil
 from pathlib import Path
 from pdfforge.create_app import create_app
-from config import TestingConfig
+from pdfforge.config import TestingConfig
 
 
 @pytest.fixture
 def app():
     """Create and configure test app"""
     app = create_app(TestingConfig)
-    
+
     yield app
-    
+
     # Cleanup
     if Path(app.config['UPLOAD_FOLDER']).exists():
         shutil.rmtree(app.config['UPLOAD_FOLDER'])
@@ -819,17 +819,17 @@ def runner(app):
 def sample_pdf():
     """Create a sample PDF for testing"""
     import fitz
-    
+
     pdf = fitz.open()
     page = pdf.new_page()
     page.insert_text((100, 100), "Test PDF")
-    
+
     temp_path = tempfile.mktemp(suffix='.pdf')
     pdf.save(temp_path)
     pdf.close()
-    
+
     yield temp_path
-    
+
     # Cleanup
     if Path(temp_path).exists():
         Path(temp_path).unlink()

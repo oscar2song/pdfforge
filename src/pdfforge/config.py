@@ -1,17 +1,17 @@
 """
 Configuration Management
 """
+
 import os
 import tempfile
-from pathlib import Path
 
 
 class Config:
     """Base configuration"""
 
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-key-change-in-production"
     MAX_CONTENT_LENGTH = 500 * 1024 * 1024  # 500MB
-    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or tempfile.mkdtemp()
+    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or tempfile.mkdtemp()
 
     # PDF Processing
     LETTER_WIDTH = 612
@@ -19,42 +19,44 @@ class Config:
 
     # Standard page sizes (width x height in points)
     PAGE_SIZES = {
-        'letter': (612, 792),
-        'letter-landscape': (792, 612),
-        'legal': (612, 1008),
-        'legal-landscape': (1008, 612),
-        'A4': (595, 842),
-        'a4': (595, 842),
-        'a4-landscape': (842, 595),
-        'A3': (842, 1191),
-        'a3': (842, 1191),
-        'a3-landscape': (1191, 842),
-        'A5': (420, 595),
-        'a5': (420, 595),
+        "letter": (612, 792),
+        "letter-landscape": (792, 612),
+        "legal": (612, 1008),
+        "legal-landscape": (1008, 612),
+        "A4": (595, 842),
+        "a4": (595, 842),
+        "a4-landscape": (842, 595),
+        "A3": (842, 1191),
+        "a3": (842, 1191),
+        "a3-landscape": (1191, 842),
+        "A5": (420, 595),
+        "a5": (420, 595),
     }
 
     # OCR Settings
-    TESSERACT_CMD = os.environ.get('TESSERACT_CMD') or None
+    TESSERACT_CMD = os.environ.get("TESSERACT_CMD") or None
 
     # Premium (external SaaS) integration
-    WORD_PREMIUM_ENABLED = os.environ.get('WORD_PREMIUM_ENABLED', 'false').lower() in ('1', 'true', 'yes')
-    WORD_PREMIUM_BASE_URL = os.environ.get('WORD_PREMIUM_BASE_URL', 'http://localhost:5003')
-    WORD_PREMIUM_API_KEY = os.environ.get('WORD_PREMIUM_API_KEY', '')
-    WORD_PREMIUM_TIMEOUT_MS = int(os.environ.get('WORD_PREMIUM_TIMEOUT_MS', '60000'))
+    WORD_PREMIUM_ENABLED = os.environ.get("WORD_PREMIUM_ENABLED", "false").lower() in ("1", "true", "yes")
+    WORD_PREMIUM_BASE_URL = os.environ.get("WORD_PREMIUM_BASE_URL", "http://localhost:5003")
+    WORD_PREMIUM_API_KEY = os.environ.get("WORD_PREMIUM_API_KEY", "")
+    WORD_PREMIUM_TIMEOUT_MS = int(os.environ.get("WORD_PREMIUM_TIMEOUT_MS", "60000"))
 
     # Logging
-    LOG_LEVEL = os.environ.get('LOG_LEVEL') or 'INFO'
-    LOG_FILE = os.environ.get('LOG_FILE') or 'pdfforge.log'
+    LOG_LEVEL = os.environ.get("LOG_LEVEL") or "INFO"
+    LOG_FILE = os.environ.get("LOG_FILE") or "pdfforge.log"
 
 
 class DevelopmentConfig(Config):
     """Development configuration"""
+
     DEBUG = True
     TESTING = False
 
 
 class ProductionConfig(Config):
     """Production configuration"""
+
     DEBUG = False
     TESTING = False
 
@@ -62,33 +64,30 @@ class ProductionConfig(Config):
         """Initialize production config with validation"""
         super().__init__()
         # Only validate SECRET_KEY when actually used, not during import
-        if not os.environ.get('SECRET_KEY'):
+        if not os.environ.get("SECRET_KEY"):
             raise ValueError("SECRET_KEY must be set in production")
 
 
 class TestingConfig(Config):
     """Testing configuration"""
+
     TESTING = True
     DEBUG = True
     UPLOAD_FOLDER = tempfile.mkdtemp()
-    SECRET_KEY = 'test-secret-key'
+    SECRET_KEY = "test-secret-key"
 
 
 # Use a function to get config to avoid import-time validation issues
 def get_config(env=None):
     """Get configuration based on environment"""
-    env = env or os.environ.get('FLASK_ENV', 'development')
+    env = env or os.environ.get("FLASK_ENV", "development")
 
-    config_map = {
-        'development': DevelopmentConfig,
-        'production': ProductionConfig,
-        'testing': TestingConfig
-    }
+    config_map = {"development": DevelopmentConfig, "production": ProductionConfig, "testing": TestingConfig}
 
     config_class = config_map.get(env, DevelopmentConfig)
 
     # For production, we need to handle the validation
-    if env == 'production':
+    if env == "production":
         try:
             return config_class()
         except ValueError as e:
@@ -101,8 +100,8 @@ def get_config(env=None):
 
 # For backward compatibility
 config = {
-    'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'testing': TestingConfig,
-    'default': DevelopmentConfig
+    "development": DevelopmentConfig,
+    "production": ProductionConfig,
+    "testing": TestingConfig,
+    "default": DevelopmentConfig,
 }

@@ -36,7 +36,7 @@ def create_app(config_class=None):
             app.config.from_object(config_class)
     else:
         # Default config
-        from config import DevelopmentConfig
+        from pdfforge.config import DevelopmentConfig
 
         app.config.from_object(DevelopmentConfig())
 
