@@ -16,18 +16,18 @@ def run_quality_checks():
             "Running tests with coverage...",
             "pytest -v --cov=pdfforge --cov-report=term-missing",
         ),
-        ("Type checking...", "python -m mypy pdfforge/"),
+        ("Type checking...", "python -m mypy src/pdfforge/"),
         (
             "Code formatting check...",
-            "python -m black --check --line-length 120 pdfforge/ tests/",
+            "python -m black --check --line-length 120 src/pdfforge/ tests/",
         ),
         (
             "Code linting...",
-            "python -m flake8 --max-line-length=120 --extend-ignore=E203,W503 pdfforge/ tests/",
+            "python -m flake8 --max-line-length=120 --extend-ignore=E203,W503 src/pdfforge/ tests/",
         ),
         (
             "Import sorting...",
-            "python -m isort --check-only --profile black --line-length 120 pdfforge/ tests/",
+            "python -m isort --check-only --profile black --line-length 120 src/pdfforge/ tests/",
         ),
     ]
 
