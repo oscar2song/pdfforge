@@ -85,7 +85,7 @@ pdfforge/
 
 - `app.py` - Application entry point (~50 lines)
 - `config.py` - Configuration management
-- `pdfforge/create_app.py` - Flask app factory
+- `src/pdfforge/create_app.py` - Flask app factory
 - `requirements.txt` - Production dependencies
 - `requirements-dev.txt` - Development dependencies
 
@@ -132,19 +132,19 @@ pytest -s
 
 ```bash
 # Format code with Black
-black pdfforge/ tests/
+black src/pdfforge/ tests/
 
 # Sort imports with isort
-isort pdfforge/ tests/
+isort src/pdfforge/ tests/
 
 # Lint with flake8
-flake8 pdfforge/ tests/
+flake8 src/pdfforge/ tests/
 
 # Type check with mypy
-mypy pdfforge/
+mypy src/pdfforge/
 
 # Lint with pylint
-pylint pdfforge/
+pylint src/pdfforge/
 ```
 
 ### 5. Commit Changes
@@ -560,11 +560,11 @@ Create `.git/hooks/pre-commit`:
 # Run before each commit
 
 # Format code
-black pdfforge/ tests/
-isort pdfforge/ tests/
+black src/pdfforge/ tests/
+isort src/pdfforge/ tests/
 
 # Run linters
-flake8 pdfforge/ tests/ || exit 1
+flake8 src/pdfforge/ tests/ || exit 1
 
 # Run tests
 pytest || exit 1
@@ -686,7 +686,7 @@ def memory_intensive_function():
 
 2. **Create Models** (if needed)
 ```python
-# pdfforge/models/split_options.py
+# src/pdfforge/models/split_options.py
 @dataclass
 class SplitOptions:
     """Options for PDF split operation."""
@@ -696,7 +696,7 @@ class SplitOptions:
 
 3. **Implement Core Logic**
 ```python
-# pdfforge/core/split.py
+# src/pdfforge/core/split.py
 class PDFSplitter:
     """Core PDF splitting logic."""
     
@@ -707,7 +707,7 @@ class PDFSplitter:
 
 4. **Create Service Layer**
 ```python
-# pdfforge/services/split_service.py
+# src/pdfforge/services/split_service.py
 class SplitService:
     """Service for PDF split operations."""
     
@@ -721,7 +721,7 @@ class SplitService:
 
 5. **Add Routes**
 ```python
-# pdfforge/routes/split.py
+# src/pdfforge/routes/split.py
 split_bp = Blueprint('split', __name__)
 
 @split_bp.route('/split', methods=['POST'])

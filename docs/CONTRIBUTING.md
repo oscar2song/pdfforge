@@ -1,512 +1,200 @@
-# 🤝 Contributing to PDFForge
+# 🤝 Contributing to PDFForge (Updated for src/ layout)
 
-Thank you for your interest in contributing to PDFForge! This document provides guidelines and instructions for contributing.
-
-## 📋 Table of Contents
-
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [How to Contribute](#how-to-contribute)
-- [Development Process](#development-process)
-- [Style Guidelines](#style-guidelines)
-- [Commit Guidelines](#commit-guidelines)
-- [Pull Request Process](#pull-request-process)
-- [Reporting Bugs](#reporting-bugs)
-- [Suggesting Features](#suggesting-features)
-
-## 📜 Code of Conduct
-
-### Our Pledge
-
-We pledge to make participation in our project a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
-
-### Our Standards
-
-**Positive behavior includes:**
-- Using welcoming and inclusive language
-- Being respectful of differing viewpoints
-- Gracefully accepting constructive criticism
-- Focusing on what is best for the community
-- Showing empathy towards other community members
-
-**Unacceptable behavior includes:**
-- Trolling, insulting/derogatory comments, and personal attacks
-- Public or private harassment
-- Publishing others' private information without permission
-- Other conduct which could reasonably be considered inappropriate
-
-### Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at oscar2song@gmail.com.
+Thank you for contributing to PDFForge! This guide has been updated for our new `src/` layout structure.
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- Python 3.11+ (3.12 recommended)
-- Git
-- Basic understanding of Flask and Python
-- Familiarity with PDF manipulation concepts (helpful but not required)
-
 ### Initial Setup
 
-1. **Fork the Repository**
-   - Visit https://github.com/oscar2song/pdfforge
-   - Click "Fork" button in the top right
-
-2. **Clone Your Fork**
 ```bash
-git clone https://github.com/YOUR_USERNAME/pdfforge.git
+# 1. Fork and clone
+git clone https://github.com/oscar2song/pdfforge.git
 cd pdfforge
-```
 
-3. **Add Upstream Remote**
-```bash
-git remote add upstream https://github.com/oscar2song/pdfforge.git
-```
-
-4. **Set Up Development Environment**
-```bash
-# Create virtual environment
+# 2. Create virtual environment
 python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# Activate virtual environment
-# Windows
-.venv\Scripts\activate
-# macOS/Linux
-source .venv/bin/activate
+# 3. Install in editable mode (REQUIRED!)
+pip install -e .
 
-# Install dependencies
-pip install -r requirements.txt
+# 4. Install dev dependencies
 pip install -r requirements-dev.txt
+
+# 5. Verify setup
+pytest  # Should pass
+python -m pdfforge.app  # Should start
 ```
 
-5. **Verify Setup**
+## 📁 Understanding the src/ Layout
+
+### Directory Structure
+
+```
+pdfforge/
+├── src/                       # All source code here
+│   └── pdfforge/             # Package directory
+│       ├── core/             # Edit: src/src/pdfforge/core/
+│       ├── services/         # Edit: src/src/pdfforge/services/
+│       └── ...
+├── tests/                    # Test files
+├── docs/                     # Documentation
+└── pyproject.toml           # Knows about src/
+```
+
+### Key Concepts
+
+**✅ File Paths (Where to Edit)**
 ```bash
-# Run tests
+# Edit these files:
+src/src/pdfforge/core/merge.py
+src/src/pdfforge/services/merge_service.py
+src/src/pdfforge/routes/merge_routes.py
+```
+
+**✅ Import Paths (In Your Code)**
+```python
+# Import like this (no 'src' in imports):
+from pdfforge.core.merge import PDFMerger
+from pdfforge.services.merge_service import MergeService
+```
+
+**✅ Running Code**
+```bash
+# Both work:
+python -m pdfforge.app
+python src/pdfforge/app.py
+```
+
+## 🛠️ Development Workflow
+
+### 1. Create Feature Branch
+
+```bash
+git checkout -b feature/my-feature
+```
+
+### 2. Make Changes
+
+**Edit source files in `src/pdfforge/`:**
+
+```bash
+# Example: Adding a new feature
+vim src/src/pdfforge/core/watermark.py
+
+# Add corresponding service
+vim src/src/pdfforge/services/watermark_service.py
+
+# Add routes
+vim src/src/pdfforge/routes/watermark_routes.py
+```
+
+### 3. Add Tests
+
+```bash
+# Create test file
+vim tests/test_watermark.py
+```
+
+**Test file example:**
+```python
+# tests/test_watermark.py
+import pytest
+from pdfforge.core.watermark import WatermarkCore  # Import works!
+
+class TestWatermark:
+    def test_apply_watermark(self):
+        core = WatermarkCore()
+        result = core.apply_watermark(...)
+        assert result.success
+```
+
+### 4. Run Quality Checks
+
+```bash
+# Format code (targets src/)
+black src/pdfforge/ tests/
+isort src/pdfforge/ tests/
+
+# Lint (targets src/)
+flake8 src/pdfforge/ tests/
+pylint src/pdfforge/
+
+# Type check (targets src/)
+mypy src/pdfforge/
+
+# Run all checks
+python scripts/run_quality_checks.py
+```
+
+### 5. Run Tests
+
+```bash
+# Tests import from installed package
 pytest
 
-# Start development server
-python app.py
-```
-
-## 🛠️ How to Contribute
-
-### Types of Contributions
-
-We welcome the following types of contributions:
-
-1. **Bug Fixes**
-   - Fix existing issues
-   - Improve error handling
-   - Fix documentation errors
-
-2. **New Features**
-   - Add new PDF operations
-   - Improve existing functionality
-   - Add new utilities
-
-3. **Documentation**
-   - Improve README
-   - Add code examples
-   - Write tutorials
-   - Translate documentation
-
-4. **Tests**
-   - Add missing tests
-   - Improve test coverage
-   - Add integration tests
-
-5. **Performance**
-   - Optimize algorithms
-   - Improve memory usage
-   - Speed improvements
-
-6. **Code Quality**
-   - Refactor code
-   - Improve readability
-   - Add type hints
-
-## 🔄 Development Process
-
-### 1. Find or Create an Issue
-
-- Check [existing issues](https://github.com/oscar2song/pdfforge/issues)
-- Comment on an issue you'd like to work on
-- Create a new issue for new features or bugs
-- Wait for approval before starting major work
-
-### 2. Create a Branch
-
-```bash
-# Update your main branch
-git checkout main
-git pull upstream main
-
-# Create feature branch
-git checkout -b feature/your-feature-name
-
-# Or for bug fixes
-git checkout -b fix/bug-description
-```
-
-**Branch naming conventions:**
-- `feature/` - New features
-- `fix/` - Bug fixes
-- `docs/` - Documentation updates
-- `refactor/` - Code refactoring
-- `test/` - Test additions/improvements
-
-### 3. Make Changes
-
-- Write clean, readable code
-- Follow style guidelines
-- Add/update tests
-- Update documentation
-- Keep commits focused and atomic
-
-### 4. Test Your Changes
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
+# With coverage
 pytest --cov=pdfforge --cov-report=html
 
-# Run specific tests
-pytest tests/test_merge.py
-
-# Check code style
-black pdfforge/ tests/
-isort pdfforge/ tests/
-flake8 pdfforge/ tests/
-mypy pdfforge/
+# Specific test
+pytest tests/test_watermark.py
 ```
 
-### 5. Commit Changes
-
-Follow commit message guidelines (see below)
+### 6. Commit and Push
 
 ```bash
-git add .
-git commit -m "feat: add PDF split functionality"
+git add src/pdfforge/ tests/
+git commit -m "feat(watermark): add PDF watermark feature"
+git push origin feature/my-feature
 ```
-
-### 6. Push to Your Fork
-
-```bash
-git push origin feature/your-feature-name
-```
-
-### 7. Create Pull Request
-
-- Go to your fork on GitHub
-- Click "New Pull Request"
-- Fill out the PR template
-- Link related issues
 
 ## 📝 Style Guidelines
 
-### Python Code Style
+### File Locations
 
-We follow **PEP 8** with Black formatting:
-
+**✅ Correct:**
 ```python
-# ✅ Good
-def merge_pdfs(
-    files: List[PDFFile], 
-    options: MergeOptions
-) -> fitz.Document:
-    """
-    Merge multiple PDF files into one.
-    
-    Args:
-        files: List of PDFFile objects to merge
-        options: Merge configuration options
-        
-    Returns:
-        Merged PDF document
-    """
-    logger.info(f"Merging {len(files)} PDF files")
-    return perform_merge(files, options)
+# When editing, use src/ paths:
+# - src/src/pdfforge/core/merge.py
+# - src/src/pdfforge/services/merge_service.py
+# - src/src/pdfforge/routes/merge_routes.py
 
-
-# ❌ Bad
-def MergePdfs(files,options):
-    # No docstring, inconsistent naming
-    return perform_merge(files,options)
+# When importing, NO src/:
+from pdfforge.core.merge import PDFMerger
+from pdfforge.services import MergeService
 ```
 
-### Docstring Style
+**❌ Incorrect:**
+```python
+# DON'T import with 'src':
+from src.pdfforge.core.merge import PDFMerger  # Wrong!
 
-Use **Google-style docstrings**:
+# DON'T use old paths in docs:
+# Edit src/pdfforge/core/merge.py  # Old, wrong
+```
+
+### Code Style (Unchanged)
 
 ```python
+# Style rules remain the same
+from typing import List, Optional
+from pathlib import Path
+
 def process_pdf(
     file_path: Path,
-    options: dict,
-    output_dir: Optional[Path] = None
+    options: dict
 ) -> ProcessResult:
     """
-    Process a PDF file with specified options.
-    
-    This function performs comprehensive PDF processing including
-    validation, transformation, and output generation.
+    Process PDF file.
     
     Args:
-        file_path: Path to the PDF file to process
-        options: Processing options dictionary containing:
-            - mode: Processing mode ('simple' or 'advanced')
-            - quality: Output quality (1-10)
-            - compress: Whether to compress output
-        output_dir: Optional output directory. If None, uses default.
-    
+        file_path: Path to PDF
+        options: Processing options
+        
     Returns:
-        ProcessResult object containing:
-            - success: Boolean indicating success
-            - output_path: Path to processed file
-            - stats: Processing statistics dictionary
-    
-    Raises:
-        FileNotFoundError: If file_path doesn't exist
-        ValidationError: If options are invalid
-        ProcessingError: If processing fails
-    
-    Example:
-        >>> result = process_pdf(
-        ...     Path("input.pdf"),
-        ...     {"mode": "simple", "quality": 8},
-        ...     Path("output/")
-        ... )
-        >>> print(result.success)
-        True
+        Processing result
     """
     pass
-```
-
-### Type Hints
-
-Always use type hints:
-
-```python
-from typing import List, Dict, Optional, Union
-from pathlib import Path
-
-def save_files(
-    files: List[bytes],
-    directory: Path,
-    prefix: str = "output",
-    overwrite: bool = False
-) -> List[Path]:
-    """Save multiple files to directory."""
-    pass
-```
-
-### Import Order
-
-Use `isort` for import organization:
-
-```python
-# Standard library imports
-import os
-import sys
-from pathlib import Path
-from typing import List, Optional
-
-# Third-party imports
-import fitz
-from flask import Flask, request, jsonify
-
-# Local imports
-from pdfforge.core.merge import PDFMerger
-from pdfforge.models.options import MergeOptions
-from pdfforge.utils.validation import validate_pdf
-```
-
-## 💬 Commit Guidelines
-
-### Commit Message Format
-
-We follow the **Conventional Commits** specification:
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
-```
-
-### Types
-
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style changes (formatting, etc.)
-- `refactor`: Code refactoring
-- `perf`: Performance improvements
-- `test`: Adding or updating tests
-- `build`: Build system changes
-- `ci`: CI/CD changes
-- `chore`: Other changes (maintenance, etc.)
-
-### Examples
-
-```bash
-# Feature
-git commit -m "feat(merge): add support for bookmark preservation"
-
-# Bug fix
-git commit -m "fix(compress): prevent file size increase on compression"
-
-# Documentation
-git commit -m "docs(readme): update installation instructions"
-
-# With body
-git commit -m "feat(split): add PDF split functionality
-
-- Implement core split logic
-- Add split service layer
-- Create split routes
-- Add tests for split operation
-
-Closes #123"
-```
-
-### Commit Best Practices
-
-- Keep commits focused and atomic
-- Write clear, descriptive messages
-- Reference issues when applicable
-- Break large changes into smaller commits
-
-## 🔍 Pull Request Process
-
-### Before Submitting
-
-Ensure your PR:
-- [ ] Passes all tests
-- [ ] Has no linting errors
-- [ ] Includes tests for new features
-- [ ] Updates documentation
-- [ ] Follows code style guidelines
-- [ ] Has descriptive commit messages
-- [ ] Is up to date with main branch
-
-### PR Template
-
-When creating a PR, include:
-
-```markdown
-## Description
-Brief description of changes
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
-
-## Testing
-Describe how you tested your changes
-
-## Screenshots (if applicable)
-Add screenshots for UI changes
-
-## Checklist
-- [ ] Tests pass
-- [ ] Documentation updated
-- [ ] Code follows style guidelines
-- [ ] Self-review completed
-
-## Related Issues
-Closes #123
-```
-
-### Review Process
-
-1. **Automated Checks**
-   - Tests must pass
-   - Linting must pass
-   - Coverage should not decrease
-
-2. **Code Review**
-   - At least one maintainer approval required
-   - Address review comments
-   - Make requested changes
-
-3. **Merge**
-   - Squash and merge (default)
-   - Maintainer will merge after approval
-
-## 🐛 Reporting Bugs
-
-### Before Reporting
-
-1. Check [existing issues](https://github.com/oscar2song/pdfforge/issues)
-2. Verify it's reproducible in the latest version
-3. Collect relevant information
-
-### Bug Report Template
-
-```markdown
-**Describe the bug**
-A clear description of what the bug is.
-
-**To Reproduce**
-Steps to reproduce:
-1. Go to '...'
-2. Click on '....'
-3. Upload file '...'
-4. See error
-
-**Expected behavior**
-What you expected to happen.
-
-**Screenshots**
-If applicable, add screenshots.
-
-**Environment:**
- - OS: [e.g., Windows 10]
- - Python Version: [e.g., 3.12]
- - PDFForge Version: [e.g., 2.0.0]
-
-**Additional context**
-Any other relevant information.
-
-**Sample Files**
-If possible, attach sample PDF files (if not sensitive).
-```
-
-## 💡 Suggesting Features
-
-### Before Suggesting
-
-1. Check [existing feature requests](https://github.com/oscar2song/pdfforge/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
-2. Consider if it aligns with project goals
-3. Think about implementation approach
-
-### Feature Request Template
-
-```markdown
-**Is your feature request related to a problem?**
-A clear description of the problem.
-
-**Describe the solution you'd like**
-Clear description of what you want to happen.
-
-**Describe alternatives you've considered**
-Any alternative solutions or features.
-
-**Use cases**
-Describe who would benefit and how.
-
-**Additional context**
-Mockups, examples, or other context.
-
-**Implementation ideas**
-If you have ideas about implementation.
 ```
 
 ## 🧪 Testing Guidelines
@@ -514,118 +202,157 @@ If you have ideas about implementation.
 ### Writing Tests
 
 ```python
+# tests/test_feature.py
 import pytest
-from pdfforge.core.merge import PDFMerger
+from pdfforge.core.feature import FeatureCore  # Imports work!
 
-class TestPDFMerger:
-    """Test suite for PDF merger."""
-    
-    @pytest.fixture
-    def merger(self):
-        """Create merger instance."""
-        return PDFMerger()
-    
-    def test_merge_basic(self, merger, sample_pdfs):
-        """Test basic merge functionality."""
-        result = merger.merge(sample_pdfs)
-        assert result is not None
-        assert len(result) == len(sample_pdfs)
-    
-    def test_merge_invalid_input(self, merger):
-        """Test merge with invalid input."""
-        with pytest.raises(ValidationError):
-            merger.merge([])
+@pytest.fixture
+def sample_pdf(tmp_path):
+    """Create sample PDF."""
+    pdf_path = tmp_path / "test.pdf"
+    # Create PDF
+    return pdf_path
+
+def test_feature(sample_pdf):
+    """Test feature functionality."""
+    core = FeatureCore()
+    result = core.process(sample_pdf)
+    assert result.success
 ```
-
-### Test Coverage
-
-- Aim for 80%+ coverage
-- Test happy paths
-- Test error cases
-- Test edge cases
 
 ### Running Tests
 
 ```bash
-# All tests
+# All tests (imports from src/)
 pytest
 
-# Specific file
+# Specific module
 pytest tests/test_merge.py
 
-# Specific test
-pytest tests/test_merge.py::TestPDFMerger::test_merge_basic
+# With output
+pytest -v -s
 
-# With coverage
+# Coverage (covers src/pdfforge/)
 pytest --cov=pdfforge --cov-report=html
 ```
 
-## 📚 Documentation
+## 🐛 Debugging Tips
 
-### Types of Documentation
+### Import Issues
 
-1. **Code Comments**
-   - Explain complex logic
-   - Document non-obvious decisions
-   - Keep comments up to date
+```bash
+# If imports don't work:
+pip install -e .  # Reinstall in editable mode
 
-2. **Docstrings**
-   - All public functions/classes
-   - Use Google style
-   - Include examples
+# Verify installation:
+pip list | grep pdfforge
+# Should show: pdfforge 2.x.x /path/to/pdfforge/src
 
-3. **README Updates**
-   - New features
-   - Changed behavior
-   - New dependencies
+# Check imports:
+python -c "import pdfforge; print(pdfforge.__file__)"
+# Should show: /path/to/pdfforge/src/pdfforge/__init__.py
+```
 
-4. **Tutorial/Guides**
-   - Step-by-step guides
-   - Use cases
-   - Best practices
+### Common Mistakes
 
-## 🏅 Recognition
+**❌ Mistake 1: Editing wrong location**
+```bash
+# Wrong - editing non-existent old location
+vim src/pdfforge/core/merge.py  # This doesn't exist!
 
-Contributors will be:
-- Listed in CONTRIBUTORS.md
-- Mentioned in release notes
-- Recognized in project README
+# Right - editing in src/
+vim src/src/pdfforge/core/merge.py  # Correct!
+```
+
+**❌ Mistake 2: Wrong import**
+```python
+# Wrong
+from src.pdfforge.core import PDFMerger  # Don't include 'src'
+
+# Right
+from pdfforge.core import PDFMerger  # Correct!
+```
+
+**❌ Mistake 3: Not installing**
+```bash
+# Wrong - running tests without install
+cd pdfforge
+pytest  # Imports may fail!
+
+# Right - install first
+pip install -e .
+pytest  # Works!
+```
+
+## 📚 Documentation Updates
+
+When updating docs, use correct paths:
+
+**In documentation (file paths):**
+```markdown
+Edit the merge core logic in `src/src/pdfforge/core/merge.py`
+```
+
+**In code examples (imports):**
+```python
+from pdfforge.core.merge import PDFMerger
+```
+
+## 🔄 Migration Notes for Contributors
+
+If you have an old checkout:
+
+```bash
+# Update your fork
+git pull upstream main
+
+# Your working directory changes:
+# OLD: src/pdfforge/core/merge.py
+# NEW: src/src/pdfforge/core/merge.py
+
+# BUT imports stay the same:
+from pdfforge.core.merge import PDFMerger  # Still works!
+
+# Reinstall
+pip install -e .
+```
+
+## ✅ Pre-Commit Checklist
+
+Before submitting PR:
+
+- [ ] Changes in `src/pdfforge/` (not old location)
+- [ ] Tests in `tests/` (use correct imports)
+- [ ] Ran `pip install -e .`
+- [ ] Tests pass: `pytest`
+- [ ] Code formatted: `black src/pdfforge/ tests/`
+- [ ] Imports sorted: `isort src/pdfforge/ tests/`
+- [ ] Linting passes: `flake8 src/pdfforge/`
+- [ ] Type checks: `mypy src/pdfforge/`
+- [ ] Docs updated (use `src/` paths)
+
+## 🎓 Learning Resources
+
+- [Why use src/ layout?](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/)
+- [Python Packaging Guide](https://packaging.python.org/)
+- [PDFForge Architecture](docs/ARCHITECTURE.md)
 
 ## 📞 Getting Help
 
-### Resources
-
-- [Documentation](docs/)
-- [GitHub Discussions](https://github.com/oscar2song/pdfforge/discussions)
-- [Issue Tracker](https://github.com/oscar2song/pdfforge/issues)
-
-### Contact
-
-- Email: oscar2song@gmail.com
-- GitHub: [@oscar2song](https://github.com/oscar2song)
-
-## 📝 Additional Notes
-
-### First-Time Contributors
-
-Welcome! Here are some good first issues:
-- Documentation improvements
-- Test additions
-- Bug fixes labeled "good first issue"
-- Code comment additions
-
-### Questions?
-
-Don't hesitate to ask questions! We're here to help:
-- Comment on the issue
+- Check [DEVELOPMENT.md](docs/DEVELOPMENT.md)
 - Ask in GitHub Discussions
-- Email the maintainers
+- Email: oscar2song@gmail.com
 
 ## 🙏 Thank You!
 
-Thank you for contributing to PDFForge! Your efforts help make PDF processing better for everyone.
+Thank you for contributing to PDFForge! The src/ layout makes our codebase more maintainable and professional.
 
 ---
 
+**Key Takeaways:**
+- ✅ Edit: `src/pdfforge/` (file paths)
+- ✅ Import: `from pdfforge.X` (no 'src')
+- ✅ Install: `pip install -e .` (required!)
+- ✅ Test: `pytest` (works after install)
+
 **Last Updated**: November 2025
-**Version**: 2.0.0

@@ -169,8 +169,8 @@ curl -H "Content-Type: application/json" -d '{
 
 ## Implementation Notes
 
-- Core logic: `pdfforge/core/split.py` (`PDFSplitterCore`)
-- Service layer: `pdfforge/services/split_service.py`
-- Routes: `pdfforge/routes/split.py`
-- UI: `pdfforge/templates/split.html`, `pdfforge/static/js/split.js`, `pdfforge/static/css/split.css`
+- Core logic: `src/src/pdfforge/core/split.py` (`PDFSplitterCore`)
+- Service layer: `src/src/pdfforge/services/split_service.py`
+- Routes: `src/src/pdfforge/routes/split.py`
+- UI: `src/pdfforge/templates/split.html`, `src/pdfforge/static/js/split.js`, `src/pdfforge/static/css/split.css`
 - Downloads: managed by `FilePathManager` under `downloads/split/` and download routes in `routes/download.py`

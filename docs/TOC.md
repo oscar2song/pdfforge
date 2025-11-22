@@ -5,8 +5,8 @@ This guide explains how PDFForge generates Table of Contents (TOC) pages, how bo
 ## Overview
 
 TOC generation is implemented in:
-- `pdfforge/core/toc.py` — classes `TOCGenerator`, `TOCStyle`, `BookmarkEntry`, and `BookmarkManager`
-- `pdfforge/services/toc_service.py` — service layer wrappers used by routes and UI
+- `src/src/pdfforge/core/toc.py` — classes `TOCGenerator`, `TOCStyle`, `BookmarkEntry`, and `BookmarkManager`
+- `src/src/pdfforge/services/toc_service.py` — service layer wrappers used by routes and UI
 
 Typical workflows:
 - Extract existing PDF bookmarks (for preview/edit in UI)

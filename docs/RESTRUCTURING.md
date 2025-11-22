@@ -183,7 +183,7 @@ pdfforge/
 
 ### Example 1: Core Merge Module
 
-**File**: `pdfforge/core/merge.py`
+**File**: `src/src/pdfforge/core/merge.py`
 
 ```python
 """
@@ -276,7 +276,7 @@ def merge_pdfs_enhanced(file_configs: List[Dict], options: Dict = None):
 
 ### Example 2: Service Layer
 
-**File**: `pdfforge/services/merge_service.py`
+**File**: `src/src/pdfforge/services/merge_service.py`
 
 ```python
 """
@@ -381,7 +381,7 @@ class MergeService:
 
 ### Example 3: Route Handler with Blueprint
 
-**File**: `pdfforge/routes/merge.py`
+**File**: `src/src/pdfforge/routes/merge.py`
 
 ```python
 """
@@ -487,7 +487,7 @@ def merge_pdfs():
 
 ### Example 4: Data Models
 
-**File**: `pdfforge/models/pdf_file.py`
+**File**: `src/src/pdfforge/models/pdf_file.py`
 
 ```python
 """
@@ -544,7 +544,7 @@ class PDFFile:
         return f"PDFFile(name='{self.name}', path='{self.path}')"
 ```
 
-**File**: `pdfforge/models/merge_options.py`
+**File**: `src/src/pdfforge/models/merge_options.py`
 
 ```python
 """
@@ -605,7 +605,7 @@ class MergeOptions:
 
 ### Example 5: App Factory Pattern
 
-**File**: `pdfforge/create_app.py`
+**File**: `src/pdfforge/create_app.py`
 
 ```python
 """
@@ -923,17 +923,17 @@ pytest tests/test_merge.py::TestPDFMerger::test_merge_two_pdfs
 pip install black flake8 mypy pylint isort
 
 # Format code
-black pdfforge/
+black src/pdfforge/
 
 # Sort imports
-isort pdfforge/
+isort src/pdfforge/
 
 # Lint code
-flake8 pdfforge/
-pylint pdfforge/
+flake8 src/pdfforge/
+pylint src/pdfforge/
 
 # Type checking
-mypy pdfforge/
+mypy src/pdfforge/
 ```
 
 ### Documentation
