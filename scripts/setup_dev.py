@@ -26,7 +26,7 @@ def main():
     print("=" * 50)
 
     # Check if we're in a virtual environment
-    if not hasattr(sys, 'real_prefix') and not (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+    if not hasattr(sys, "real_prefix") and not (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix):
         print("❌ Please activate your virtual environment first!")
         print("   On Windows: .venv\\Scripts\\activate")
         print("   On macOS/Linux: source .venv/bin/activate")
@@ -41,16 +41,16 @@ def main():
         sys.exit(1)
 
     # Create necessary directories
-    directories = ['tests/fixtures', 'static/css', 'static/js', 'static/images', 'logs']
+    directories = ["tests/fixtures", "static/css", "static/js", "static/images", "logs"]
     for directory in directories:
         Path(directory).mkdir(parents=True, exist_ok=True)
         print(f"✅ Created directory: {directory}")
 
     # Create .env file if it doesn't exist
-    if not Path('../.env').exists():
-        with open('../.env.example', 'r') as example_file:
+    if not Path("../.env").exists():
+        with open("../.env.example", "r") as example_file:
             env_content = example_file.read()
-        with open('../.env', 'w') as env_file:
+        with open("../.env", "w") as env_file:
             env_file.write(env_content)
         print("✅ Created .env file from .env.example")
 
@@ -58,10 +58,10 @@ def main():
     print("\n🔍 Verifying installations...")
 
     tools = {
-        'pytest': 'pytest --version',
-        'black': 'black --version',
-        'flake8': 'flake8 --version',
-        'mypy': 'mypy --version'
+        "pytest": "pytest --version",
+        "black": "black --version",
+        "flake8": "flake8 --version",
+        "mypy": "mypy --version",
     }
 
     for tool, command in tools.items():

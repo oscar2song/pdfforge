@@ -36,9 +36,7 @@ def run_quality_checks():
     for description, command in checks:
         print(f"\n📋 {description}")
         try:
-            result = subprocess.run(
-                command, shell=True, check=True, capture_output=True, text=True
-            )
+            result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
             print("   ✅ PASSED")
         except subprocess.CalledProcessError as e:
             print("   ❌ FAILED")

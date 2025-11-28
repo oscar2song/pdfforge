@@ -15,7 +15,7 @@ def run_tests():
         ("pytest -v --cov=pdfforge --cov-report=html", "Running tests with coverage"),
         ("mypy pdfforge/", "Type checking"),
         ("black --check pdfforge/ tests/", "Code formatting check"),
-        ("flake8 pdfforge/ tests/", "Code linting")
+        ("flake8 pdfforge/ tests/", "Code linting"),
     ]
 
     all_passed = True

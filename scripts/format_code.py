@@ -19,13 +19,7 @@ def format_code():
     for description, command in commands:
         print(f"\n📋 {description}")
         try:
-            result = subprocess.run(
-                command,
-                shell=True,
-                check=True,
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
             print("   ✅ COMPLETED")
             if result.stdout:
                 print(f"   {result.stdout.strip()}")
