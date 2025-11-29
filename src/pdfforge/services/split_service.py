@@ -77,7 +77,7 @@ class SplitService:
                 try:
                     name = Path(path).name
                     # core _split_by_page_ranges pattern: <base>_pages_<start>-<end>.pdf
-                    m = re.search(r"_pages_(\d+)-(\d+)\\.pdf$", name)
+                    m = re.search(r"_pages_(\d+)-(\d+)\.pdf$", name)
                     if m:
                         return int(m.group(1)), int(m.group(2))
                     return None
@@ -119,7 +119,7 @@ class SplitService:
                         # Try to infer start from previous renamed_files last range
                         if renamed_files:
                             prev_name = Path(renamed_files[-1]).name
-                            m2 = re.search(r"_split_pages_(\d+)-(\d+)\\.pdf$", prev_name)
+                            m2 = re.search(r"_split_pages_(\d+)-(\d+)\.pdf$", prev_name)
                             prev_end = int(m2.group(2)) if m2 else 0
                             start = prev_end + 1 if prev_end > 0 else 1
                         else:
